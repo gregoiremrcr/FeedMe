@@ -65,9 +65,67 @@ Les objectifs de sécurité et de livraison comprennent :
 
 ## Démarrage
 
-Les commandes d’installation et de lancement seront ajoutées lorsque la structure du frontend, du backend et les fichiers de configuration seront en place.
+La stack locale peut être démarrée avec Docker Compose depuis le dossier `FeedMe/` :
 
-À terme, le lancement local de la stack sera documenté ici, avec la configuration requise dans un fichier `.env.example`. Ne renseignez jamais de vraies clés ou de secrets dans ce fichier ni dans le dépôt.
+```bash
+docker compose up --build
+```
+
+Les services sont ensuite disponibles aux adresses suivantes :
+
+- frontend : http://localhost:3000
+- backend et documentation OpenAPI : http://localhost:8000/docs
+- contrôle de santé backend : http://localhost:8000/health
+
+Copiez `.env.example` vers `.env` uniquement si vous devez modifier les ports ou le nom de la base. Aucun secret n'est nécessaire pour cette fondation. Ne renseignez jamais de vraies clés ou de secrets dans ce fichier ni dans le dépôt.
+
+### Prérequis
+
+- Docker Desktop démarré avec Compose disponible (`docker compose` ou `docker-compose`).
+- Ports `3000` et `8000` disponibles, ou personnalisés dans `.env`.
+
+### Services Compose
+
+| Service | Rôle | Adresse |
+|---|---|---|
+| `frontend` | Application Next.js | http://localhost:3000 |
+| `backend` | API FastAPI | http://localhost:8000 |
+| `mongo` | Base MongoDB locale | réseau Docker uniquement |
+
+MongoDB est conservée dans le volume Docker `mongo_data`. Les healthchecks démarrent les services dans l'ordre : MongoDB, backend, puis frontend.
+
+### Vérifications
+
+```bash
+# Vérifier la configuration sans démarrer les services
+docker compose config
+
+# Démarrer la stack
+docker compose up --build
+
+# Vérifier l'API depuis un autre terminal
+curl http://localhost:8000/health
+
+# Arrêter les conteneurs en conservant les données MongoDB
+docker compose down
+```
+
+La route `/health` renvoie `{"status":"ok","service":"feedme-backend"}` et ne dépend pas encore de MongoDB. La documentation OpenAPI est disponible sur http://localhost:8000/docs.
+
+Pour supprimer également les données MongoDB locales : `docker compose down -v`.
+
+### Vérifications sans Docker
+
+```bash
+cd feedme-app
+npm install
+npm run lint
+npm run build
+
+cd ../backend
+python -m pip install -r requirements-dev.txt
+python -m pytest
+```
 
 ## API
 

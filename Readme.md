@@ -217,6 +217,8 @@ Les secrets seront stockes dans AWS Secrets Manager, les logs dans CloudWatch et
 5. **Qualite** : tests, gestion des erreurs, limitation des requetes et scans de securite.
 6. **Livraison** : pipeline GitHub Actions, deploiement AWS et preparation de la demonstration.
 
+Pour suivre l'implementation et savoir quoi faire a chaque phase, consulter le [guide d'implementation](docs/GUIDE_IMPLEMENTATION.md) et le [plan detaille des taches](docs/PLAN_TACHES.md).
+
 ## Licence
 
 Aucune licence n’est définie pour le moment.

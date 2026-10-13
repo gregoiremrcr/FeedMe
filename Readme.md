@@ -65,7 +65,19 @@ Les objectifs de sécurité et de livraison comprennent :
 
 ## Démarrage
 
-Les commandes d’installation et de lancement seront ajoutées lorsque la structure du frontend, du backend et les fichiers de configuration seront en place.
+La stack locale peut être démarrée avec Docker Compose depuis le dossier `FeedMe/` :
+
+```bash
+docker compose up --build
+```
+
+Les services sont ensuite disponibles aux adresses suivantes :
+
+- frontend : http://localhost:3000
+- backend et documentation OpenAPI : http://localhost:8000/docs
+- contrôle de santé backend : http://localhost:8000/health
+
+Copiez `.env.example` vers `.env` uniquement si vous devez modifier les ports ou le nom de la base. Aucun secret n'est nécessaire pour cette fondation.
 
 À terme, le lancement local de la stack sera documenté ici, avec la configuration requise dans un fichier `.env.example`. Ne renseignez jamais de vraies clés ou de secrets dans ce fichier ni dans le dépôt.
 

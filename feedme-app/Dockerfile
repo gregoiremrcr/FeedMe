@@ -1,11 +1,11 @@
 FROM node:22-bookworm-slim AS dependencies
 
 WORKDIR /app
-COPY package.json ./
-# Install in the target Linux image so npm selects the matching native
-# packages (notably lightningcss) instead of reusing a host-specific lock.
-RUN npm install --global npm@12.2.0 \
-    && npm install --ignore-scripts
+COPY package.json package-lock.json ./
+# Use the committed lockfile so local, CI and production builds install the
+# same dependency tree, including platform-specific optional packages.
+RUN npm install --global npm@11.6.2 \
+    && npm ci
 
 FROM node:22-bookworm-slim AS builder
 

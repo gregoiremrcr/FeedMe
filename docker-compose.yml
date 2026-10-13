@@ -4,8 +4,11 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-feedme}
+    ports:
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
+      - ./mongo/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
       interval: 5s

@@ -28,7 +28,7 @@
 | Backend | Python |
 | Base de données | MongoDB |
 | Intelligence artificielle | Claude |
-| Hébergement | AWS |
+| Images applicatives | Docker / GHCR |
 | CI/CD et contrôles de sécurité | GitHub Actions |
 
 ## Architecture cible
@@ -59,7 +59,7 @@ Les objectifs de sécurité et de livraison comprennent :
 - Image Docker multi-stage exécutée avec un utilisateur non privilégié.
 - `docker-compose` pour démarrer les composants nécessaires en local.
 - GitHub Actions pour exécuter les vérifications et contrôles avant intégration.
-- Déploiement AWS avec permissions IAM minimales et alerte de budget.
+- Publication des images Docker sur GHCR avec des tags SHA immuables.
 
 > Ces éléments décrivent les objectifs du projet ; leur présence effective dépend de l’avancement de l’implémentation.
 
@@ -118,7 +118,7 @@ Pour supprimer également les données MongoDB locales : `docker compose down -v
 
 ```bash
 cd feedme-app
-npm install
+npm ci
 npm run lint
 npm run build
 
@@ -131,9 +131,21 @@ python -m pytest
 
 Le backend exposera une API REST structurée. Les routes, schémas de requête/réponse et mécanismes d’authentification seront documentés ici ou dans une spécification OpenAPI dès qu’ils seront définis.
 
-## Déploiement
+## CI/CD et GHCR
 
-La cible de déploiement est **AWS**. Les instructions de déploiement, l’URL de démonstration et les informations de fonctionnement seront ajoutées après mise en ligne. Les ressources AWS devront respecter le principe du moindre privilège et une alerte de budget devra être configurée.
+Les workflows GitHub Actions se trouvent dans `.github/workflows/` :
+
+- `ci.yml` s'exécute sur les Pull Requests et les push vers `main`. Il lance les tests backend, le lint et le build frontend, puis construit les deux images Docker sans les publier.
+- `docker-publish.yml` réutilise cette CI et publie uniquement après un push validé vers `main`.
+
+Les images sont publiées dans GitHub Container Registry :
+
+```text
+ghcr.io/gregoiremrcr/feedme-backend:<SHA>
+ghcr.io/gregoiremrcr/feedme-frontend:<SHA>
+```
+
+Le tag SHA est la référence immuable à utiliser pour un futur déploiement. Le tag `latest` est fourni comme alias pratique. Aucun déploiement cloud n'est effectué par les workflows actuels.
 
 ## Démonstration
 
@@ -147,7 +159,7 @@ La démonstration présentera le parcours complet : conversation avec le chatbot
 - [ ] Instructions de lancement local et stack Docker documentées.
 - [ ] Intégration de Claude et contrôle du format des réponses réalisés.
 - [ ] Pipeline GitHub Actions configuré.
-- [ ] Application déployée sur AWS ; IAM et alerte de budget vérifiés.
+- [ ] Images applicatives publiées sur GHCR.
 - [ ] Démonstration complète préparée.
 
 ## Plan d'architecture detaille
@@ -178,7 +190,7 @@ Backend Python FastAPI
 
 ```text
 FeedMe/
-|- frontend/
+|- feedme-app/
 |  |- app/                         # Pages Next.js : login, chat, restaurants
 |  |- components/                  # Composants d'interface
 |  |- lib/                         # Client API et gestion de session
@@ -201,6 +213,7 @@ FeedMe/
 |- docker-compose.yml
 |- .env.example
 |- .github/workflows/ci.yml
+|- .github/workflows/docker-publish.yml
 `- README.md
 ```
 
@@ -247,24 +260,21 @@ Les collections principales seront :
 
 Les mots de passe seront hashes avec Argon2 ou bcrypt et ne seront jamais stockes en clair.
 
-### Deploiement AWS cible
+### Deploiement ulterieur
 
 ```text
-CloudFront / Amplify
+Plateforme de production a definir
           |
           v
 Frontend Next.js
           |
-Application Load Balancer
-          |
-          v
-ECS Fargate - Backend FastAPI
-          |- MongoDB Atlas
+Backend FastAPI
+          |- MongoDB
           |- Claude API
           `- API restaurants
 ```
 
-Les secrets seront stockes dans AWS Secrets Manager, les logs dans CloudWatch et les permissions seront gerees par des roles IAM avec le principe du moindre privilege. AWS Budgets sera configure pour surveiller les couts.
+La production sera traitee dans une phase ulterieure. Les images validees seront recuperees depuis GHCR avec leur tag SHA. Aucun secret de production ne doit etre ajoute au depot.
 
 ### Phases de realisation
 
@@ -273,7 +283,7 @@ Les secrets seront stockes dans AWS Secrets Manager, les logs dans CloudWatch et
 3. **Recherche** : choix de l'API restaurants, position, adresse et filtres.
 4. **Chatbot** : integration de Claude, prompts, schemas JSON et conversations.
 5. **Qualite** : tests, gestion des erreurs, limitation des requetes et scans de securite.
-6. **Livraison** : pipeline GitHub Actions, deploiement AWS et preparation de la demonstration.
+6. **Livraison** : pipeline GitHub Actions, publication GHCR et preparation de la demonstration.
 
 Pour suivre l'implementation et savoir quoi faire a chaque phase, consulter le [guide d'implementation](docs/GUIDE_IMPLEMENTATION.md) et le [plan detaille des taches](docs/PLAN_TACHES.md).
 

@@ -1,11 +1,16 @@
+name: feedme
+
 services:
   mongo:
     image: mongo:8.0
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-feedme}
+    ports:
+      - "27018:27017"
     volumes:
       - mongo_data:/data/db
+      - ./mongo/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
       interval: 5s
@@ -35,6 +40,7 @@ services:
       context: ./feedme-app
     restart: unless-stopped
     environment:
+      # Used by server-side Next.js code on the internal Compose network.
       BACKEND_INTERNAL_URL: http://backend:8000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"

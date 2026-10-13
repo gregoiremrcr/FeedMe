@@ -1,9 +1,11 @@
 FROM node:22-bookworm-slim AS dependencies
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-# Resolve platform-specific optional native packages for the Linux image.
-RUN npm install --ignore-scripts
+COPY package.json ./
+# Install in the target Linux image so npm selects the matching native
+# packages (notably lightningcss) instead of reusing a host-specific lock.
+RUN npm install --global npm@12.2.0 \
+    && npm install --ignore-scripts
 
 FROM node:22-bookworm-slim AS builder
 
@@ -16,6 +18,7 @@ FROM node:22-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 WORKDIR /app
 

@@ -92,6 +92,131 @@ La démonstration présentera le parcours complet : conversation avec le chatbot
 - [ ] Application déployée sur AWS ; IAM et alerte de budget vérifiés.
 - [ ] Démonstration complète préparée.
 
+## Plan d'architecture detaille
+
+Le MVP sera construit sous la forme d'un **monolithe modulaire**. Cette approche permet de developper rapidement l'application tout en separant clairement les responsabilites. Les modules pourront etre extraits en services independants si le projet evolue.
+
+```text
+Utilisateur
+    |
+    v
+Frontend Next.js
+    | HTTPS / API REST JSON
+    v
+Backend Python FastAPI
+    |- Authentification JWT
+    |- Gestion des conversations
+    |- Extraction des preferences
+    |- Recherche et classement des restaurants
+    |- Appel et validation de Claude
+    `- Gestion centralisee des erreurs
+          |
+          |- MongoDB
+          |- API de restaurants / cartes
+          `- Claude API
+```
+
+### Organisation du projet
+
+```text
+FeedMe/
+|- frontend/
+|  |- app/                         # Pages Next.js : login, chat, restaurants
+|  |- components/                  # Composants d'interface
+|  |- lib/                         # Client API et gestion de session
+|  |- types/                       # Types TypeScript
+|  `- Dockerfile
+|
+|- backend/
+|  |- app/
+|  |  |- main.py
+|  |  |- core/                      # Configuration, securite, erreurs
+|  |  |- api/v1/                    # Routes REST versionnees
+|  |  |- schemas/                   # Schemas de validation
+|  |  |- models/                    # Modeles MongoDB
+|  |  |- repositories/              # Acces aux donnees
+|  |  `- services/                  # Logique metier et services externes
+|  |- tests/
+|  |- requirements.txt
+|  `- Dockerfile
+|
+|- docker-compose.yml
+|- .env.example
+|- .github/workflows/ci.yml
+`- README.md
+```
+
+### Recherche de restaurants et IA
+
+Une API de restaurants/cartes devra etre ajoutee au projet. Deux options sont possibles : Google Places API, plus complete mais payante, ou OpenStreetMap/Overpass, gratuite mais moins homogene.
+
+Claude ne doit pas etre utilise comme source directe de restaurants. Le backend doit :
+
+1. recevoir et valider le message utilisateur ;
+2. demander a Claude d'extraire les criteres dans un format JSON ;
+3. valider ce JSON avec un schema Pydantic ;
+4. rechercher les restaurants via l'API externe ;
+5. filtrer et classer les resultats ;
+6. demander a Claude de formuler une reponse claire a partir de resultats reels.
+
+Les reponses de Claude doivent toujours etre validees avant d'etre utilisees. Une reponse invalide doit etre rejetee ou faire l'objet d'une nouvelle tentative controlee.
+
+### API REST previsionnelle
+
+Toutes les routes seront prefixees par `/api/v1` et documentees avec OpenAPI :
+
+```text
+POST   /auth/register
+POST   /auth/login
+GET    /auth/me
+
+POST   /conversations
+GET    /conversations
+GET    /conversations/{id}
+POST   /conversations/{id}/messages
+
+POST   /restaurants/search
+GET    /restaurants/{id}
+```
+
+### Donnees MongoDB
+
+Les collections principales seront :
+
+- `users` : email, hash du mot de passe, dates de creation et de modification ;
+- `conversations` : utilisateur, messages, titre et dates ;
+- `searches` : criteres, conversation associee et resultats.
+
+Les mots de passe seront hashes avec Argon2 ou bcrypt et ne seront jamais stockes en clair.
+
+### Deploiement AWS cible
+
+```text
+CloudFront / Amplify
+          |
+          v
+Frontend Next.js
+          |
+Application Load Balancer
+          |
+          v
+ECS Fargate - Backend FastAPI
+          |- MongoDB Atlas
+          |- Claude API
+          `- API restaurants
+```
+
+Les secrets seront stockes dans AWS Secrets Manager, les logs dans CloudWatch et les permissions seront gerees par des roles IAM avec le principe du moindre privilege. AWS Budgets sera configure pour surveiller les couts.
+
+### Phases de realisation
+
+1. **Fondations** : frontend, backend, Docker Compose, MongoDB et route `/health`.
+2. **Authentification** : inscription, connexion, JWT et protection des routes.
+3. **Recherche** : choix de l'API restaurants, position, adresse et filtres.
+4. **Chatbot** : integration de Claude, prompts, schemas JSON et conversations.
+5. **Qualite** : tests, gestion des erreurs, limitation des requetes et scans de securite.
+6. **Livraison** : pipeline GitHub Actions, deploiement AWS et preparation de la demonstration.
+
 ## Licence
 
 Aucune licence n’est définie pour le moment.

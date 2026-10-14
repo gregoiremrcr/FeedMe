@@ -4,26 +4,36 @@
   --font-headline: var(--font-garamond);
   --font-body: var(--font-manrope);
 
-  --color-surface: #faf5ee;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f6f0e8;
-  --color-surface-container: #f2ece4;
-  --color-surface-container-high: #ece6dc;
+  /* Fonds */
+  --color-surface: #edebdd;                    /* blanc coton */
+  --color-surface-container-lowest: #f7f5ec;   /* cartes, champs */
+  --color-surface-container-low: #e6e3d3;
+  --color-surface-container: #e2dfcd;
+  --color-surface-container-high: #d9d5c2;     /* bordures */
 
-  --color-primary: #c2652a;
-  --color-primary-container: #e08850;
-  --color-primary-fixed: #fbe8d8;
-  --color-on-primary: #ffffff;
-  --color-on-primary-container: #fbe8d8;
-  --color-on-primary-fixed: #401a08;
+  /* Action principale */
+  --color-primary: #801010;                    /* rouge cerise */
+  --color-primary-container: #801010;
+  --color-on-primary: #edebdd;
+  --color-on-primary-container: #edebdd;
 
-  --color-secondary: #78706a;
-  --color-tertiary: #8c3c3c;
-  --color-tertiary-fixed: #fce0e0;
-  --color-on-tertiary-fixed: #2e1515;
+  /* Fonds doux (chips actives, badges) */
+  --color-primary-fixed: #f2c4bc;              /* rose poudré */
+  --color-on-primary-fixed: #2a1b18;
 
-  --color-on-surface: #3a302a;
-  --color-on-surface-variant: #605850;
+  /* Textes */
+  --color-on-surface: #2a1b18;                 /* encre brune */
+  --color-on-surface-variant: #6a5750;
+  --color-secondary: #6a5750;
+
+  /* Erreurs */
+  --color-tertiary: #b42318;
+  --color-tertiary-fixed: #f7d6d2;
+  --color-on-tertiary-fixed: #3b0a07;
+
+  /* Accents */
+  --color-accent: #e9b44c;                     /* moutarde : surlignage, tag */
+  --color-success: #5e6b45;                    /* olive : « pas cher » */
 }
 
 body {

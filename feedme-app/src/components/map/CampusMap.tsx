@@ -50,8 +50,8 @@ export default function CampusMap({ spots, selectedId, onSelect }: Props) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setReady(true);
-    return () => setReady(false);
+    const frame = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   if (!ready) {

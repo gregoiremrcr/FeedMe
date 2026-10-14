@@ -1,99 +1,126 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Flame, MapPin, Bot, Wallet, User } from "lucide-react";
+import { Menu, User, Utensils, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const links = [
   { href: "/", label: "Accueil" },
-  { href: "/carte", label: "Carte du campus" },
-   { href: "/assistant", label: "Assistant IA" },
-  { href: "/profil", label: "Mon profil" },
+  { href: "/carte", label: "Carte" },
+  { href: "/assistant", label: "Assistant" },
+  { href: "/profil", label: "Profil" },
 ];
 
 export default function Header() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-surface/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-6 lg:px-12">
-        <Link href="/" className="flex shrink-0 items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-on-primary">
-            <Flame size={22} />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-headline text-2xl font-bold leading-none tracking-tight">
-              FeedMe
-            </span>
-            <span className="mt-0.5 flex items-center gap-1 text-xs font-medium text-on-surface-variant">
-              <MapPin size={13} className="text-primary" />
-              Campus Arch
-            </span>
-          </div>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-surface-container-high bg-surface/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-6 lg:px-12">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={() => setOpen(false)}>
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
+            <Utensils size={18} aria-hidden="true" />
+          </span>
+          <span className="font-headline text-2xl font-semibold leading-none">FeedMe</span>
         </Link>
 
-        <nav className="hidden items-center gap-2 rounded-xl bg-surface-container-low p-1.5 md:flex">
-          {links.map(({ href, label }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`rounded-lg px-4 py-2 text-sm transition-colors ${
-                  active
-                    ? "bg-primary-container font-semibold text-on-primary-container"
-                    : "font-medium text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                {label}
-              </Link>
-            );
-          })}
+        <nav aria-label="Navigation principale" className="hidden items-center gap-8 md:flex">
+          {links.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive(href) ? "page" : undefined}
+              className={`border-b-2 py-1 text-sm transition-colors ${
+                isActive(href)
+                  ? "border-primary font-bold text-on-surface"
+                  : "border-transparent font-medium text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
 
         <div className="flex shrink-0 items-center gap-3">
-          <Link
-             href="/assistant"
-              className="hidden items-center gap-2 rounded-full bg-primary-fixed px-3.5 py-1.5 text-xs font-semibold text-on-primary-fixed transition-all hover:bg-primary-container hover:text-on-primary-container xl:flex"
-              >
-              <Bot size={17} className="text-primary" />
-              Poser une question
-          </Link>
+          {loading && <div className="h-10 w-28 rounded-lg bg-surface-container" aria-hidden="true" />}
 
           {!loading && user && (
-            <>
-              <div className="hidden items-center gap-2 rounded-full bg-surface-container px-3.5 py-1.5 text-xs font-medium sm:flex">
-                <Wallet size={16} className="text-primary" />
-                <span>
-                  Solde midi : <strong className="font-semibold text-primary">6,50 €</strong>
-                </span>
-              </div>
-
-              <Link href="/profil" className="flex items-center gap-2 pl-1">
-                <div className="hidden text-right lg:block">
-                  <span className="block text-xs font-semibold leading-tight">{user.name}</span>
-                  <span className="text-[11px] leading-none text-on-surface-variant">{user.campus}</span>
-                </div>
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary">
-                  <User size={18} />
-                </div>
-              </Link>
-            </>
+            <Link href="/profil" className="flex items-center gap-2.5">
+              <span className="hidden text-right lg:block">
+                <span className="block text-xs font-bold leading-tight">{user.name}</span>
+                <span className="text-[11px] leading-none text-on-surface-variant">{user.campus}</span>
+              </span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-on-primary">
+                <User size={18} aria-hidden="true" />
+              </span>
+              <span className="sr-only lg:hidden">Mon profil</span>
+            </Link>
           )}
 
           {!loading && !user && (
             <Link
               href="/connexion"
-              className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90"
+              className="hidden h-10 items-center rounded-lg border border-surface-container-high bg-surface-container-lowest px-5 text-sm font-semibold transition-colors hover:border-on-surface sm:inline-flex"
             >
               Connexion
             </Link>
           )}
+
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-surface-container-high md:hidden"
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
+
+      {open && (
+        <nav
+          id="mobile-menu"
+          aria-label="Navigation mobile"
+          className="border-t border-surface-container-high bg-surface px-6 py-4 md:hidden"
+        >
+          <ul className="flex flex-col">
+            {links.map(({ href, label }) => (
+              <li key={href}>
+                <Link
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  aria-current={isActive(href) ? "page" : undefined}
+                  className={`block border-b border-surface-container-high py-3.5 text-base ${
+                    isActive(href) ? "font-bold text-primary" : "font-medium"
+                  }`}
+                >
+                  {label}
+                </Link>
+              </li>
+            ))}
+            {!loading && !user && (
+              <li>
+                <Link
+                  href="/connexion"
+                  onClick={() => setOpen(false)}
+                  className="mt-4 flex h-12 items-center justify-center rounded-xl bg-primary text-sm font-bold text-on-primary"
+                >
+                  Connexion
+                </Link>
+              </li>
+            )}
+          </ul>
+        </nav>
+      )}
     </header>
   );
 }

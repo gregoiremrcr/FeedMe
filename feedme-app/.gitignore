@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/.vitest
 
 # next.js
 /.next/
@@ -35,6 +38,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# tooling
+*.eslintcache
 
 # typescript
 *.tsbuildinfo

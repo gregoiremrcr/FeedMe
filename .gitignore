@@ -1,0 +1,42 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Generated dependencies and build output
+node_modules/
+**/node_modules/
+**/.next/
+**/out/
+**/coverage/
+**/dist/
+**/build/
+
+# Python environments and caches
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+
+# Test and tooling output
+**/test-results/
+**/playwright-report/
+**/.vitest/
+*.tsbuildinfo
+*.log
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp

@@ -110,7 +110,7 @@ curl http://localhost:8000/health
 docker compose down
 ```
 
-La route `/health` renvoie `{"status":"ok","service":"feedme-backend"}` et ne dépend pas encore de MongoDB. La documentation OpenAPI est disponible sur http://localhost:8000/docs.
+La route `/health` renvoie `{"status":"ok","service":"feedme-backend"}` sans dépendre de MongoDB. La route `/health/ready` vérifie que le backend peut joindre MongoDB. La documentation OpenAPI est disponible sur http://localhost:8000/docs.
 
 Pour supprimer également les données MongoDB locales : `docker compose down -v`.
 
@@ -120,16 +120,30 @@ Pour supprimer également les données MongoDB locales : `docker compose down -v
 cd feedme-app
 npm ci
 npm run lint
+npm run test:run
+npm run test:coverage
 npm run build
 
 cd ../backend
 python -m pip install -r requirements-dev.txt
 python -m pytest
+ruff check app tests
 ```
 
 ## API
 
-Le backend exposera une API REST structurée. Les routes, schémas de requête/réponse et mécanismes d’authentification seront documentés ici ou dans une spécification OpenAPI dès qu’ils seront définis.
+Le backend expose actuellement les routes d’authentification suivantes :
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+GET  /api/v1/auth/me
+POST /api/v1/auth/logout
+```
+
+Les mots de passe sont hashés avec Argon2 et le JWT est stocké dans un cookie
+HttpOnly. Les routes et schémas détaillés sont disponibles dans OpenAPI sur
+http://localhost:8000/docs.
 
 ## CI/CD et GHCR
 

@@ -15,8 +15,8 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 - [ ] Finaliser la maquette et les parcours essentiels : accueil, inscription/connexion, chat, résultats et états vides/erreurs.
 - [ ] Créer la structure du frontend Next.js, les composants communs, les types et une base responsive accessible.
 - [ ] Créer le backend FastAPI avec une configuration par environnement et une séparation `core`, `api/v1`, `schemas`, `models`, `repositories` et `services`.
-- [ ] Ajouter `GET /health` avec une réponse documentée et un test.
-- [ ] Ajouter MongoDB et définir la connexion/configuration sans inscrire de secret dans le dépôt.
+- [x] Ajouter `GET /health` avec une réponse documentée et un test.
+- [x] Ajouter MongoDB et définir la connexion/configuration sans inscrire de secret dans le dépôt.
 - [ ] Ajouter `docker-compose.yml` pour lancer les composants nécessaires en local.
 - [ ] Ajouter les Dockerfiles nécessaires, multi-stage lorsque pertinent, avec un utilisateur non privilégié.
 - [ ] Ajouter `.env.example` avec uniquement des noms de variables et des valeurs fictives/sûres.
@@ -26,13 +26,13 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 
 ## 2. Authentification et sécurité des comptes
 
-- [ ] Définir les schémas Pydantic d’inscription, connexion et utilisateur public.
-- [ ] Implémenter `POST /api/v1/auth/register` avec validation et hash Argon2 ou bcrypt.
-- [ ] Implémenter `POST /api/v1/auth/login` et l’émission d’un JWT avec durée de vie configurée.
-- [ ] Implémenter `GET /api/v1/auth/me` et une dépendance de protection côté serveur.
-- [ ] Ne jamais retourner le hash du mot de passe ni exposer les secrets ou détails internes.
-- [ ] Ajouter les tests de succès, de validation, de doublon, d’identifiants incorrects et d’accès non authentifié.
-- [ ] Définir le stockage du jeton côté frontend avec une stratégie adaptée aux risques XSS/CSRF ; ne pas stocker de secrets applicatifs dans le frontend.
+- [x] Définir les schémas Pydantic d’inscription, connexion et utilisateur public.
+- [x] Implémenter `POST /api/v1/auth/register` avec validation et hash Argon2 ou bcrypt.
+- [x] Implémenter `POST /api/v1/auth/login` et l’émission d’un JWT avec durée de vie configurée.
+- [x] Implémenter `GET /api/v1/auth/me` et une dépendance de protection côté serveur.
+- [x] Ne jamais retourner le hash du mot de passe ni exposer les secrets ou détails internes.
+- [x] Ajouter les tests de succès, de validation, de doublon, d’identifiants incorrects et d’accès non authentifié.
+- [x] Définir le stockage du jeton côté frontend avec une stratégie adaptée aux risques XSS/CSRF ; ne pas stocker de secrets applicatifs dans le frontend.
 - [ ] Ajouter une politique de limitation des tentatives de connexion et des erreurs d’authentification non révélatrices.
 
 **Critères de fin :** les routes fonctionnent, les routes protégées refusent les requêtes non authentifiées, les mots de passe sont hashés et les tests couvrent les cas principaux.
@@ -83,7 +83,7 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 
 ## 6. CI/CD et livraison AWS
 
-- [ ] Créer `.github/workflows/ci.yml` pour installer les dépendances et exécuter lint, tests et contrôles de sécurité.
+- [x] Créer `.github/workflows/ci.yml` pour installer les dépendances et exécuter lint et tests.
 - [ ] Définir l’infrastructure AWS cible et son coût estimé avant provisionnement.
 - [ ] Préparer la configuration réseau, les rôles IAM au moindre privilège et la gestion des secrets dans AWS Secrets Manager.
 - [ ] Configurer frontend, Application Load Balancer, ECS Fargate, MongoDB Atlas, logs CloudWatch et variables d’environnement.

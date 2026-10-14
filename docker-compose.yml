@@ -24,7 +24,7 @@ services:
     environment:
       MONGO_URL: mongodb://mongo:27017
       MONGO_DATABASE: ${MONGO_DATABASE:-feedme}
-      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-32-bytes-minimum}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

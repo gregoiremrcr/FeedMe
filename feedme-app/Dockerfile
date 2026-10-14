@@ -2,8 +2,10 @@ FROM node:22-bookworm-slim AS dependencies
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-# Resolve platform-specific optional native packages for the Linux image.
-RUN npm install --ignore-scripts
+# Use the committed lockfile so local, CI and production builds install the
+# same dependency tree, including platform-specific optional packages.
+RUN npm install --global npm@11.6.2 \
+    && npm ci
 
 FROM node:22-bookworm-slim AS builder
 
@@ -16,6 +18,7 @@ FROM node:22-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 WORKDIR /app
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { EB_Garamond, Manrope } from "next/font/google";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import Header from "@/components/layout/Header";
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${garamond.variable} ${manrope.variable}`}>
       <body className="min-h-screen font-body">
         <AuthProvider>
-          <Header />
+          <Suspense fallback={<header className="h-20" />}>
+            <Header />
+          </Suspense>
           <main className="w-full pt-20">{children}</main>
           <Footer />
         </AuthProvider>

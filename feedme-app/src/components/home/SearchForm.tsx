@@ -1,21 +1,24 @@
 "use client";
 
 import { SyntheticEvent, useState } from "react";
-import { ArrowRight } from "lucide-react";
-import BudgetSlider from "./BudgetSlider";
+import { AlertCircle, ArrowRight, Check } from "lucide-react";
 import LocationPicker from "@/components/location/LocationPicker";
 import { Place } from "@/lib/geocode";
 import { formatPrice } from "@/lib/restaurant";
 import {
-  BUDGET_DEFAULT,
   BUDGET_MAX,
   BUDGET_MIN,
   BUDGET_STEP,
   budgetLabel,
   Criteria,
+  DEFAULT_PREFILL,
+  Prefill,
   WishId,
   WISHES,
 } from "@/lib/search";
+import BudgetSlider from "./BudgetSlider";
+
+const PLACE_INPUT_ID = "place-input";
 
 function StepTitle({ n, id, children }: { n: number; id: string; children: React.ReactNode }) {
   return (
@@ -33,10 +36,16 @@ function StepTitle({ n, id, children }: { n: number; id: string; children: React
   );
 }
 
-export default function SearchForm({ onSubmit }: { onSubmit: (criteria: Criteria) => void }) {
-  const [place, setPlace] = useState<Place | null>(null);
-  const [budget, setBudget] = useState(BUDGET_DEFAULT);
-  const [wishes, setWishes] = useState<WishId[]>([]);
+type Props = {
+  initial?: Prefill;
+  onSubmit: (criteria: Criteria) => void;
+  onCancel?: () => void;
+};
+
+export default function SearchForm({ initial = DEFAULT_PREFILL, onSubmit, onCancel }: Props) {
+  const [place, setPlace] = useState<Place | null>(initial.place);
+  const [budget, setBudget] = useState(initial.budget);
+  const [wishes, setWishes] = useState<WishId[]>(initial.wishes);
   const [submitted, setSubmitted] = useState(false);
 
   const missingPlace = submitted && !place;
@@ -47,7 +56,10 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: Criteria
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitted(true);
-    if (!place) return;
+    if (!place) {
+      document.getElementById(PLACE_INPUT_ID)?.focus();
+      return;
+    }
     onSubmit({ place, budget, wishes });
   };
 
@@ -59,9 +71,13 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: Criteria
     >
       <section aria-labelledby="step-place">
         <StepTitle n={1} id="step-place">T’es où ?</StepTitle>
-        <LocationPicker value={place} onChange={setPlace} />
+        <LocationPicker value={place} onChange={setPlace} invalid={missingPlace} inputId={PLACE_INPUT_ID} />
         {missingPlace && (
-          <p role="alert" className="mt-1 text-sm font-medium text-tertiary">
+          <p
+            role="alert"
+            className="mt-2 flex items-center gap-2 rounded-lg bg-tertiary-fixed px-3 py-2.5 text-sm font-semibold text-on-tertiary-fixed"
+          >
+            <AlertCircle size={18} aria-hidden="true" className="shrink-0" />
             Dis-nous où tu es pour qu’on cherche autour de toi.
           </p>
         )}
@@ -81,13 +97,13 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: Criteria
           </span>
         </div>
         <BudgetSlider
-        value={budget}
-        min={BUDGET_MIN}
-        max={BUDGET_MAX}
-        step={BUDGET_STEP}
-        onChange={setBudget}
-        labelledBy="step-budget"
-        valueText={formatPrice(budget)}
+          value={budget}
+          min={BUDGET_MIN}
+          max={BUDGET_MAX}
+          step={BUDGET_STEP}
+          onChange={setBudget}
+          labelledBy="step-budget"
+          valueText={formatPrice(budget)}
         />
         <div className="mt-2 flex justify-between text-xs font-medium text-on-surface-variant">
           <span>{BUDGET_MIN} €</span>
@@ -107,12 +123,13 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: Criteria
                 type="button"
                 aria-pressed={active}
                 onClick={() => toggleWish(id)}
-                className={`h-10 rounded-[10px] px-4 text-sm transition-colors ${
+                className={`inline-flex h-10 items-center gap-1.5 rounded-[10px] border px-4 text-sm transition-colors ${
                   active
-                    ? "bg-on-surface font-semibold text-surface"
-                    : "border border-surface-container-high font-medium hover:border-on-surface"
+                    ? "border-primary bg-primary font-semibold text-on-primary"
+                    : "border-surface-container-high bg-surface-container-lowest font-medium hover:border-on-surface"
                 }`}
               >
+                {active && <Check size={15} aria-hidden="true" />}
                 {label}
               </button>
             );
@@ -120,7 +137,16 @@ export default function SearchForm({ onSubmit }: { onSubmit: (criteria: Criteria
         </div>
       </section>
 
-      <div className="flex justify-end">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-[52px] px-5 text-sm font-semibold text-on-surface-variant transition-colors hover:text-on-surface"
+          >
+            Annuler
+          </button>
+        )}
         <button
           type="submit"
           className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-7 text-[15px] font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-[0.99] sm:w-auto"

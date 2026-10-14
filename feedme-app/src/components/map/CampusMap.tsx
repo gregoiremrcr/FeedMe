@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { formatPrice } from "@/lib/restaurant";
 import { CAMPUS_CENTER, Spot } from "@/lib/spots";
 
-const campusIcon = L.divIcon({
+const centerIcon = L.divIcon({
   className: "",
   html: `<div class="relative -translate-x-1/2 -translate-y-1/2">
     <span class="absolute h-8 w-8 -translate-x-1/4 -translate-y-1/4 animate-ping rounded-full bg-primary/30"></span>
@@ -23,7 +23,7 @@ function priceIcon(spot: Spot, selected: boolean) {
 
   return L.divIcon({
     className: "",
-    html: `<div class="w-fit -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold shadow-lg ${style}">${formatPrice(spot.price)}</div>`,
+    html: `<div class="w-fit -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold shadow-lg ${style}">${spot.priceIsEstimate ? "~" : ""}${formatPrice(spot.price)}</div>`,
     iconSize: [0, 0],
   });
 }
@@ -38,15 +38,25 @@ function FlyToSelected({ spot }: { spot?: Spot }) {
   return null;
 }
 
+function RecenterOnChange({ center }: { center: [number, number] }) {
+  const map = useMap();
+  const [lat, lng] = center;
+
+  useEffect(() => {
+    map.setView([lat, lng], 15);
+  }, [lat, lng, map]);
+
+  return null;
+}
+
 type Props = {
   spots: Spot[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  center?: [number, number];
 };
 
-export default function CampusMap({ spots, selectedId, onSelect }: Props) {
-  // La carte n'est créée qu'après le montage, et détruite au démontage,
-  // pour éviter l'erreur "Map container is being reused".
+export default function CampusMap({ spots, selectedId, onSelect, center = CAMPUS_CENTER }: Props) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -61,13 +71,13 @@ export default function CampusMap({ spots, selectedId, onSelect }: Props) {
   const selected = spots.find((s) => s.id === selectedId);
 
   return (
-    <MapContainer center={CAMPUS_CENTER} zoom={16} scrollWheelZoom className="h-full w-full">
+    <MapContainer center={center} zoom={16} scrollWheelZoom className="h-full w-full">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <Marker position={CAMPUS_CENTER} icon={campusIcon} title="Campus" interactive={false} />
+      <Marker position={center} icon={centerIcon} title="Toi" interactive={false} />
 
       {spots.map((spot) => (
         <Marker
@@ -79,6 +89,7 @@ export default function CampusMap({ spots, selectedId, onSelect }: Props) {
         />
       ))}
 
+      <RecenterOnChange center={center} />
       <FlyToSelected spot={selected} />
     </MapContainer>
   );

@@ -7,6 +7,8 @@ import { getCurrentPlace, LocateError, MIN_QUERY_LENGTH, Place, suggestPlaces } 
 type Props = {
   value: Place | null;
   onChange: (place: Place | null) => void;
+  invalid?: boolean;
+  inputId?: string;
 };
 
 const LOCATE_MESSAGES = {
@@ -15,8 +17,9 @@ const LOCATE_MESSAGES = {
   unsupported: "Ton navigateur ne gère pas la localisation. Écris ton adresse.",
 };
 
-export default function LocationPicker({ value, onChange }: Props) {
-  const id = useId();
+export default function LocationPicker({ value, onChange, invalid = false, inputId }: Props) {
+  const generatedId = useId();
+  const id = inputId ?? generatedId;
   const listId = `${id}-list`;
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -140,6 +143,7 @@ export default function LocationPicker({ value, onChange }: Props) {
             aria-expanded={showPanel}
             aria-controls={listId}
             aria-autocomplete="list"
+            aria-invalid={invalid}
             aria-activedescendant={active >= 0 ? `${id}-option-${active}` : undefined}
             autoComplete="off"
             maxLength={120}
@@ -148,7 +152,9 @@ export default function LocationPicker({ value, onChange }: Props) {
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
             placeholder="Ton adresse, ta fac, ta rue…"
-            className="h-[52px] w-full rounded-xl border border-surface-container-high bg-surface-container-lowest pl-11 pr-11 text-[15px] transition placeholder:text-secondary/70 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15"
+            className={`h-[52px] w-full rounded-xl border bg-surface-container-lowest pl-11 pr-11 text-[15px] transition placeholder:text-secondary/70 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15 ${
+              invalid ? "border-tertiary" : "border-surface-container-high"
+            }`}
           />
           {query && (
             <button

@@ -1,14 +1,5 @@
-import BudgetSection from "@/components/home/BudgetSection";
-import PepitesSection from "@/components/home/PepitesSection";
-import AssistantSection from "@/components/home/AssistantSection";
-import MapSection from "@/components/map/MapSection";
+import HomeSearch from "@/components/home/HomeSearch";
 
 export default function HomePage() {
-  return (
-    <>
-      <BudgetSection />
-      <PepitesSection />
-      <AssistantSection />
-    </>
-  );
+  return <HomeSearch />;
 }

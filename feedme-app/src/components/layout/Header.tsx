@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 const links = [
   { href: "/", label: "Accueil" },
   { href: "/carte", label: "Carte du campus" },
+   { href: "/assistant", label: "Assistant IA" },
   { href: "/profil", label: "Mon profil" },
 ];
 
@@ -54,13 +55,13 @@ export default function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            className="hidden items-center gap-2 rounded-full bg-primary-fixed px-3.5 py-1.5 text-xs font-semibold text-on-primary-fixed transition-all hover:bg-primary-container hover:text-on-primary-container xl:flex"
-          >
-            <Bot size={17} className="text-primary" />
-            Assistant IA
-          </button>
+          <Link
+             href="/assistant"
+              className="hidden items-center gap-2 rounded-full bg-primary-fixed px-3.5 py-1.5 text-xs font-semibold text-on-primary-fixed transition-all hover:bg-primary-container hover:text-on-primary-container xl:flex"
+              >
+              <Bot size={17} className="text-primary" />
+              Poser une question
+          </Link>
 
           {!loading && user && (
             <>

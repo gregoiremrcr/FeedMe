@@ -25,7 +25,7 @@
 | Domaine | Technologie envisagée |
 |---|---|
 | Frontend | React / Next.js, CSS |
-| Backend | Python |
+| Backend | Python, Next.js |
 | Base de données | MongoDB |
 | Intelligence artificielle | Claude |
 | Hébergement | AWS |

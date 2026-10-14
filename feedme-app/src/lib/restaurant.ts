@@ -19,7 +19,8 @@ export const restaurants: Restaurant[] = [
     price: 5.2,
     badge: "Prix mini ",
     walkTime: "3 min • Bât. B",
-    image: "/images/cantine-emile.jpg",
+    image: "/cantine-emilie.jpg",
+
   },
   {
     id: "bao-et-bol",
@@ -30,7 +31,8 @@ export const restaurants: Restaurant[] = [
     badge: "Top portion ",
     badgeAccent: true,
     walkTime: "5 min • Esplanade",
-    image: "/images/bao-et-bol.jpg",
+    image: "/bao-et-bol.jpg",
+
   },
   {
     id: "fournil-des-arts",
@@ -40,7 +42,7 @@ export const restaurants: Restaurant[] = [
     price: 4.9,
     badge: "Moins de 5 € ",
     walkTime: "2 min • Sortie Métro",
-    image: "/images/fournil-des-arts.jpg",
+    image: "/fournil-des-arts.jpg"
   },
 ];
 

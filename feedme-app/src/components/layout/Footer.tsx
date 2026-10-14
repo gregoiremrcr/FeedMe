@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Utensils } from "lucide-react";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const links = [
   { href: "/partenaires", label: "Campus partenaires" },
@@ -11,6 +12,7 @@ const links = [
 
 export default function Footer() {
   return (
+    <AuthProvider>
     <footer className="w-full bg-surface-container-low py-14">
       <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-6 md:flex-row md:items-center lg:px-12">
         <div className="max-w-md space-y-2">
@@ -36,5 +38,6 @@ export default function Footer() {
         </ul>
       </div>
     </footer>
+    </AuthProvider>
   );
 }

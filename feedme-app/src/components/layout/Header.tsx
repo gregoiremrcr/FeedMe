@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Flame, MapPin, Bot, Wallet, User } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const links = [
-    { href: "/", label: "Accueil"},
-    { href: "/carte", label: "Carte du campus"},
-    { href: "/restaurants", label: "Fiche restaurant" },
-    { href: "/profil", label: "Mon profil" },
-
+  { href: "/", label: "Accueil" },
+  { href: "/carte", label: "Carte du campus" },
+  { href: "/profil", label: "Mon profil" },
 ];
 
 export default function Header() {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-surface/90 backdrop-blur-xl">
@@ -24,14 +24,15 @@ export default function Header() {
           </div>
           <div className="flex flex-col">
             <span className="font-headline text-2xl font-bold leading-none tracking-tight">
-              MidiCampus
+              FeedMe
             </span>
             <span className="mt-0.5 flex items-center gap-1 text-xs font-medium text-on-surface-variant">
               <MapPin size={13} className="text-primary" />
-              Campus Condorcet
+              Campus Arch
             </span>
           </div>
         </Link>
+
         <nav className="hidden items-center gap-2 rounded-xl bg-surface-container-low p-1.5 md:flex">
           {links.map(({ href, label }) => {
             const active = pathname === href;
@@ -51,6 +52,7 @@ export default function Header() {
             );
           })}
         </nav>
+
         <div className="flex shrink-0 items-center gap-3">
           <button
             type="button"
@@ -60,21 +62,35 @@ export default function Header() {
             Assistant IA
           </button>
 
-          <div className="hidden items-center gap-2 rounded-full bg-surface-container px-3.5 py-1.5 text-xs font-medium sm:flex">
-            <Wallet size={16} className="text-primary" />
-            <span>
-              Solde midi : <strong className="font-semibold text-primary">6,50 €</strong>
-            </span>
-          </div>
-           <div className="flex items-center gap-2 pl-1">
-            <div className="hidden text-right lg:block">
-              <span className="block text-xs font-semibold leading-tight">Camille L.</span>
-              <span className="text-[11px] leading-none text-on-surface-variant">Étudiante L3</span>
-            </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary">
-              <User size={18} />
-            </div>
-          </div>
+          {!loading && user && (
+            <>
+              <div className="hidden items-center gap-2 rounded-full bg-surface-container px-3.5 py-1.5 text-xs font-medium sm:flex">
+                <Wallet size={16} className="text-primary" />
+                <span>
+                  Solde midi : <strong className="font-semibold text-primary">6,50 €</strong>
+                </span>
+              </div>
+
+              <Link href="/profil" className="flex items-center gap-2 pl-1">
+                <div className="hidden text-right lg:block">
+                  <span className="block text-xs font-semibold leading-tight">{user.name}</span>
+                  <span className="text-[11px] leading-none text-on-surface-variant">{user.campus}</span>
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary">
+                  <User size={18} />
+                </div>
+              </Link>
+            </>
+          )}
+
+          {!loading && !user && (
+            <Link
+              href="/connexion"
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90"
+            >
+              Connexion
+            </Link>
+          )}
         </div>
       </div>
     </header>

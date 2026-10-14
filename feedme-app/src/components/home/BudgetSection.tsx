@@ -117,7 +117,7 @@ export default function BudgetSection() {
               })}
             </div>
           </div>
-
+            
           <div className="flex flex-col items-center justify-between gap-4 pt-2 sm:flex-row">
             <div className="order-2 flex items-center gap-2 text-xs text-on-surface-variant sm:order-1">
               <Bike size={18} className="text-tertiary" />

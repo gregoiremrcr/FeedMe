@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
 
+type OverpassElement = {
+  id: number;
+  lat?: number;
+  lon?: number;
+  center?: { lat?: number; lon?: number };
+  tags?: Record<string, string>;
+};
+
+type OverpassResponse = { elements?: OverpassElement[] };
+
 export async function GET(
   request: Request,
-  // Next.js récupère automatiquement les paramètres de l'URL (le fameux {id})
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const restaurantId = params.id;
+  void request;
 
-    // 1. Validation basique : s'assurer que l'ID est bien présent
+  try {
+    const { id: restaurantId } = await params;
+
     if (!restaurantId) {
       return NextResponse.json(
         { success: false, error: "L'identifiant du restaurant est obligatoire." },
@@ -16,8 +26,6 @@ export async function GET(
       );
     }
 
-    // 2. On interroge OpenStreetMap pour retrouver cet élément précis par son ID
-    // En Overpass QL, on peut chercher directement un "node" ou un "way" avec id(numéro)
     const overpassQuery = `
       [out:json][timeout:25];
       (
@@ -32,47 +40,38 @@ export async function GET(
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       body: overpassQuery,
-      headers: {
-        'Content-Type': 'text/plain',
-      },
+      headers: { 'Content-Type': 'text/plain' },
     });
 
     if (!response.ok) {
-      throw new Error("Erreur lors de la communication avec OpenStreetMap.");
+      throw new Error('Erreur lors de la communication avec OpenStreetMap.');
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as OverpassResponse;
 
-    // Si aucun élément ne correspond à cet ID
     if (!data.elements || data.elements.length === 0) {
       return NextResponse.json(
-        { success: false, error: "Restaurant introuvable." },
-        { status: 404 } // Code 404 = Ressource non trouvée
+        { success: false, error: 'Restaurant introuvable.' },
+        { status: 404 }
       );
     }
 
-    // On prend le premier élément trouvé et on le nettoie
     const el = data.elements[0];
     const restaurant = {
       id: el.id.toString(),
       name: el.tags?.name || 'Nom inconnu',
-      lat: el.lat || (el.center && el.center.lat),
-      lon: el.lon || (el.center && el.center.lon),
+      lat: el.lat ?? el.center?.lat,
+      lon: el.lon ?? el.center?.lon,
       cuisine: el.tags?.cuisine || 'Non spécifié',
-      address: el.tags && el.tags['addr:street']
+      address: el.tags?.['addr:street']
         ? `${el.tags['addr:housenumber'] || ''} ${el.tags['addr:street']}, ${el.tags['addr:city'] || ''}`
         : 'Adresse non disponible',
     };
 
-    // 3. On retourne les détails du restaurant au client
-    return NextResponse.json({
-      success: true,
-      data: restaurant,
-    });
-
-  } catch (error: any) {
-    // Gestion sécurisée des erreurs (Pilier 6 : Masquage technique)
-    console.error("Erreur interne (Détails restaurant):", error.message);
+    return NextResponse.json({ success: true, data: restaurant });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Erreur interne (Détails restaurant):', errorMessage);
 
     return NextResponse.json(
       { success: false, error: 'Une erreur interne est survenue sur le serveur.' },

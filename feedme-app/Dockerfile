@@ -10,15 +10,18 @@ RUN npm install --global npm@11.6.2 \
 FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN npm run lint \
+    && npm run build
 
 FROM node:22-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 

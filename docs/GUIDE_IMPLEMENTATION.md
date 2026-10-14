@@ -5,8 +5,8 @@ Ce document transforme la documentation du projet en feuille de route opération
 ## 1. État actuel
 
 - Le dépôt contient un squelette Next.js dans `feedme-app/`.
-- Le backend FastAPI n'est pas encore présent.
-- MongoDB, Docker Compose, l'authentification, l'API restaurants, Claude, les tests, la CI et AWS ne sont pas encore implémentés.
+- Le backend FastAPI est présent dans `backend/` avec configuration MongoDB et routes JWT.
+- MongoDB, Docker Compose, l'authentification, les tests frontend et la CI sont partiellement implémentés ; l'API restaurants backend, Claude et AWS restent à réaliser.
 - Le fournisseur de restaurants reste à choisir : Google Places ou OpenStreetMap/Overpass.
 - Aucun secret réel ne doit être ajouté au dépôt.
 

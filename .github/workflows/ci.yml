@@ -38,6 +38,9 @@ jobs:
       - name: Run pytest
         run: python -m pytest
 
+      - name: Run Ruff
+        run: ruff check app tests
+
   frontend:
     name: Frontend checks
     runs-on: ubuntu-latest
@@ -63,6 +66,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:run
 
       - name: Build
         run: npm run build

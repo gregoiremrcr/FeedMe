@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { restaurants, formatPrice } from '@/lib/restaurant';
 
+export const instant = false;
+
 export default async function RestaurantPage({
   params,
 }: {

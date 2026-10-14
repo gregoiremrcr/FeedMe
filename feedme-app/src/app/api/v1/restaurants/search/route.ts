@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod'; // Outil de validation strict (Pilier 4)
+import { z } from 'zod';
 import { searchRestaurantsFromOSM } from '../../../../services/restaurantService';
-// Définition du schéma de validation strict pour bloquer les champs mal formés ou non désirés (Allowlist)
+
+// Schéma de validation strict avec Zod incluant le budget
 const searchSchema = z.object({
-  lat: z.number().min(-90).max(90),   // Latitude valide obligatoire
-  lon: z.number().min(-180).max(180), // Longitude valide obligatoire
-  radius: z.number().positive().max(10000).optional().default(1500), // Rayon maximum 10km
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  radius: z.number().positive().max(10000).optional().default(1500),
+  cuisine: z.string().optional(),
+  budget: z.number().min(1).max(3).optional(), // 1: Économique, 2: Moyen, 3: Élevé
 });
 
 export async function POST(request: Request) {
   try {
-    // 1. Récupération des données JSON de la requête
     const body = await request.json();
 
-    // 2. Validation stricte des données entrantes (Controller Layer)
-    // Si un champ est invalide ou inconnu, Zod rejette la requête immédiatement (Pilier 4)
     const validationResult = searchSchema.safeParse(body);
     
     if (!validationResult.success) {
@@ -28,12 +28,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const { lat, lon, radius } = validationResult.data;
+    // On récupère maintenant aussi le budget validé
+    const { lat, lon, radius, cuisine, budget } = validationResult.data;
 
-    // 3. Appel de la couche Service pour exécuter la logique métier
-    const restaurants = await searchRestaurantsFromOSM({ lat, lon, radius });
+    // Appel du service en transmettant le budget
+    const restaurants = await searchRestaurantsFromOSM({ lat, lon, radius, cuisine, budget });
 
-    // 4. Retour de la réponse HTTP propre[cite: 5]
     return NextResponse.json({
       success: true,
       count: restaurants.length,
@@ -41,8 +41,6 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    // 5. Gestion sécurisée des erreurs (Pilier 6 : Masquage absolu des erreurs au client)[cite: 4]
-    // On ne renvoie jamais de "stack trace" technique brute, mais un message générique propre.
     console.error("Erreur interne du serveur:", error.message);
 
     return NextResponse.json(

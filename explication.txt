@@ -1,0 +1,40 @@
+1. Le Service (src/services/restaurantService.ts)Rôle dans l'architecture : C'est la Service Layer. Son unique mission est de gérer la logique métier et de parler au fournisseur externe (OpenStreetMap). Il ne sait pas ce qu'est un "navigateur web" ou une "requête HTTP client", il traite juste la donnée brute.   L'Interface SearchParams :TypeScriptexport interface SearchParams {
+  lat: number;
+  lon: number;
+  radius: number;
+}
+Explication : En TypeScript, cela sert de contrat. On indique que pour chercher un restaurant, on a obligatoirement besoin de trois informations sous forme de chiffres : une latitude (lat), une longitude (lon), et un rayon (radius).La requête Overpass QL :TypeScriptconst overpassQuery = `...`;
+Explication : OpenStreetMap ne s'interroge pas avec du SQL classique, mais avec un langage textuel spécial appelé Overpass QL. Ce bloc de texte dit littéralement au serveur d'OpenStreetMap : "Cherche tous les éléments taggés comme 'restaurant' (nœuds ou chemins) situés dans un rayon précis autour de cette latitude et de cette longitude".L'appel fetch :TypeScriptconst response = await fetch('https://overpass-api.de/api/interpreter', {
+  method: 'POST',
+  body: overpassQuery,
+  headers: { 'Content-Type': 'text/plain' },
+});
+Explication : On envoie la requête textuelle qu'on vient de préparer vers l'URL publique officielle d'OpenStreetMap. Le mot await indique à JavaScript d'attendre que le serveur distant réponde avant de continuer.Le nettoyage et le formatage (filter et map) :TypeScriptconst restaurants = data.elements
+  .filter((el: any) => el.tags && el.tags.name)
+  .map((el: any) => ({ ... }));
+Explication : Les données brutes renvoyées par OpenStreetMap sont gigantesques et contiennent beaucoup de bruit.Le .filter() retire tous les éléments qui n'ont pas de nom.Le .map() transforme chaque élément brut pour ne garder qu'un objet propre et structuré pour ton application (un ID, un nom, des coordonnées propres, une adresse formatée).2. Le Controller / Route API (src/app/api/v1/restaurants/search/route.ts)Rôle dans l'architecture : C'est la Controller Layer. C'est le point d'entrée qui écoute le client (le frontend), valide les données, appelle le service, et renvoie la réponse HTTP finale.   La validation stricte avec Zod (Pilier 4 de sécurité) :TypeScriptconst searchSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  radius: z.number().positive().max(10000).optional().default(1500),
+});
+Explication : Conformément aux bonnes pratiques de sécurité (Validation des entrées), on utilise Zod pour poser un filtre strict (allowlist). Si un utilisateur malveillant essaie d'envoyer du texte à la place d'une coordonnée GPS, ou un rayon aberrant de 1 000 000 de kilomètres, Zod bloque la requête instantanément avant même qu'elle n'aille plus loin.   La fonction POST et le safeParse :TypeScriptconst body = await request.json();
+const validationResult = searchSchema.safeParse(body);
+
+if (!validationResult.success) {
+  return NextResponse.json({ error: 'Données de requête invalides.' }, { status: 400 });
+}
+Explication : Lorsqu'un utilisateur clique sur "Rechercher" sur le site web, le frontend envoie un message JSON. Le code récupère ce message (request.json()) et le fait passer au crible par Zod (safeParse). Si le test échoue, on renvoie une erreur 400 (Mauvaise requête) au client.L'appel au Service et la réponse :TypeScriptconst restaurants = await searchRestaurantsFromOSM({ lat, lon, radius });
+
+return NextResponse.json({
+  success: true,
+  count: restaurants.length,
+  data: restaurants,
+});
+Explication : Si les données sont valides, le Controller appelle sagement le Service (searchRestaurantsFromOSM) qu'on a vu juste au-dessus, récupère la liste des restaurants propre, et la renvoie au frontend sous format JSON avec un code 200 (Succès).La gestion sécurisée des erreurs (Pilier 6 de sécurité) :TypeScript} catch (error: any) {
+  console.error("Erreur interne du serveur:", error.message);
+  return NextResponse.json(
+    { success: false, error: 'Une erreur interne est survenue sur le serveur.' },
+    { status: 500 }
+  );
+}
+Explication : Si un bug technique survient (par exemple, si OpenStreetMap coupe ses serveurs), le bloc attrapeur (catch) intercepte l'erreur. Conformément au pilier "Zero Technical Leak", on écrit le vrai détail technique dans la console du serveur pour les développeurs (console.error), mais on masque l'erreur au client en renvoyant un message générique (Une erreur interne est survenue...). Cela évite de donner des informations techniques sensibles à des personnes malveillantes.   

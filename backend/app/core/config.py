@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
     jwt_expire_minutes: int = 60 * 24
     frontend_origin: str = "http://localhost:3000"
-    overpass_url: str = "https://overpass-api.de/api/interpreter"
+    overpass_url: str = "https://api-overpass.pikamap.fr/api/interpreter"
     overpass_timeout_seconds: float = Field(default=30.0, gt=0, le=60)
     nominatim_url: str = "https://nominatim.openstreetmap.org/search"
     osm_user_agent: str = "FeedMe/1.0 (restaurant discovery; configure OSM_USER_AGENT)"

@@ -191,6 +191,87 @@ def test_osm_search_returns_empty_list_without_mock_fallback(monkeypatch: pytest
     assert result == []
 
 
+def test_osm_search_posts_to_configured_provider_and_maps_elements(monkeypatch: pytest.MonkeyPatch) -> None:
+    configured_url = "https://api-overpass.pikamap.fr/api/interpreter"
+    request = RestaurantSearchRequest(lat=48.85, lon=2.35)
+    captured: dict[str, Any] = {}
+
+    class Response:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, list[dict[str, Any]]]:
+            return {
+                "elements": [
+                    {
+                        "type": "node",
+                        "id": 1,
+                        "lat": 48.851,
+                        "lon": 2.351,
+                        "tags": {
+                            "name": "Node Bistro",
+                            "cuisine": "french;wine",
+                            "addr:housenumber": "1",
+                            "addr:street": "Rue Test",
+                            "phone": "+33123456789",
+                            "website": "https://node.example",
+                            "opening_hours": "Mo-Su 10:00-22:00",
+                        },
+                    },
+                    {
+                        "type": "way",
+                        "id": 2,
+                        "center": {"lat": 48.852, "lon": 2.352},
+                        "tags": {"name": "Way Cafe", "amenity": "cafe"},
+                    },
+                    {
+                        "type": "relation",
+                        "id": 3,
+                        "center": {"lat": 48.853, "lon": 2.353},
+                        "tags": {"name": "Relation Restaurant", "amenity": "restaurant"},
+                    },
+                ]
+            }
+
+    class Client:
+        def __init__(self, timeout: float) -> None:
+            assert timeout == 17.0
+
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        async def post(self, url: str, **kwargs: Any) -> Response:
+            captured["url"] = url
+            captured.update(kwargs)
+            return Response()
+
+    monkeypatch.setattr(
+        osm,
+        "get_settings",
+        lambda: Settings(_env_file=None, overpass_url=configured_url, overpass_timeout_seconds=17.0),
+    )
+    monkeypatch.setattr(osm.httpx, "AsyncClient", lambda *args, **kwargs: Client(**kwargs))
+
+    result = asyncio.run(osm.search_osm(request, Location(lat=48.85, lon=2.35, source="browser"), 1000))
+
+    assert captured["url"] == configured_url
+    assert captured["headers"]["Accept"] == "application/json"
+    assert captured["headers"]["User-Agent"].startswith("FeedMe/")
+    assert captured["data"]["data"].startswith("\n[out:json]")
+    assert {restaurant.id for restaurant in result} == {"node/1", "way/2", "relation/3"}
+    node = next(restaurant for restaurant in result if restaurant.id == "node/1")
+    assert node.address == "1, Rue Test"
+    assert node.phone == "+33123456789"
+    assert node.website == "https://node.example"
+    assert node.opening_hours == "Mo-Su 10:00-22:00"
+    assert node.price is None
+    assert node.rating is None
+    assert node.wait_minutes is None
+
+
 def test_assistant_calls_osm_tool_and_returns_structured_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
     class ToolUse:
         type = "tool_use"
@@ -247,6 +328,31 @@ def test_overpass_provider_error_is_controlled(monkeypatch: pytest.MonkeyPatch) 
 
         async def post(self, *args: Any, **kwargs: Any) -> None:
             raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(osm.httpx, "AsyncClient", lambda *args, **kwargs: Client())
+    with TestClient(app) as client:
+        response = client.post("/api/v1/restaurants/search", json={"lat": 48.85, "lon": 2.35})
+    assert response.status_code == 502
+    assert response.json()["detail"] == "La recherche OpenStreetMap est temporairement indisponible."
+
+
+def test_overpass_invalid_json_is_controlled(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Response:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, Any]:
+            raise ValueError("invalid JSON")
+
+    class Client:
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            return None
+
+        async def post(self, *args: Any, **kwargs: Any) -> Response:
+            return Response()
 
     monkeypatch.setattr(osm.httpx, "AsyncClient", lambda *args, **kwargs: Client())
     with TestClient(app) as client:

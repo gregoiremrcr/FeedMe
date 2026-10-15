@@ -70,7 +70,7 @@ def test_register_login_and_me() -> None:
         assert register.json()["email"] == "alex@example.com"
         assert "password_hash" not in register.json()
         cookie = register.headers["set-cookie"].lower()
-        assert "httponly" in cookie and "samesite=lax" in cookie
+        assert "httponly" in cookie and "samesite=none" in cookie
         assert "secure" not in cookie
         assert client.get("/api/v1/auth/me").status_code == 200
 

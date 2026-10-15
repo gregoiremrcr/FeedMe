@@ -275,35 +275,32 @@ def test_osm_search_posts_to_configured_provider_and_maps_elements(monkeypatch: 
 
 def test_assistant_calls_osm_tool_and_returns_structured_candidates(monkeypatch: pytest.MonkeyPatch) -> None:
     class ToolUse:
-        type = "tool_use"
         name = "search_nearby_restaurants"
-        id = "tool-1"
-        input: ClassVar[dict[str, Any]] = {"cuisines": ["italian"]}
+        args: ClassVar[dict[str, Any]] = {"cuisines": ["italian"]}
 
     class Text:
-        type = "text"
         text = "J’ai trouvé un restaurant italien à proximité."
 
     class FirstResponse:
-        content: ClassVar[list[ToolUse]] = [ToolUse()]
+        function_calls: ClassVar[list[ToolUse]] = [ToolUse()]
 
     class FinalResponse:
-        content: ClassVar[list[Text]] = [Text()]
+        text = "J’ai trouvé un restaurant italien à proximité."
 
     class Messages:
         calls = 0
 
-        async def create(self, **kwargs: Any) -> Any:
+        async def generate_content(self, **kwargs: Any) -> Any:
             self.calls += 1
             return FirstResponse() if self.calls == 1 else FinalResponse()
 
-    class FakeClaude:
-        messages = Messages()
+    class FakeGemini:
+        aio = type("AsyncClient", (), {"models": Messages()})()
 
         async def close(self) -> None:
             return None
 
-    monkeypatch.setattr(assistant, "_client", lambda: FakeClaude())
+    monkeypatch.setattr(assistant, "_client", lambda: assistant._GeminiClient(FakeGemini()))
     item = {
         "id": "node/5", "name": "Trattoria", "lat": 48.9, "lon": 2.3,
         "distance_m": 90, "address": None, "cuisines": ["italian"], "kind": "restaurant",

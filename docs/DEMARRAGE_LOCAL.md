@@ -31,7 +31,7 @@ Compose démarre les services dans l’ordre MongoDB, backend, puis frontend. `N
 
 Dans `.env`, remplace `OSM_USER_AGENT` par un identifiant de l’application et une adresse de contact réelle. Les recherches d’adresse utilisent le service public Nominatim, limité à une requête par seconde pour l’application ; le backend espace les appels par instance et garde les géocodages en mémoire 24 heures. Cette limite locale ne suffit pas si plusieurs instances backend sont déployées : dans ce cas, configure un fournisseur adapté ou une limitation/cache partagé. Les réponses Overpass sont mises en cache en mémoire pendant une minute. Les URL des services sont configurables par `NOMINATIM_URL` et `OVERPASS_URL`.
 
-L’assistant nécessite aussi `ANTHROPIC_API_KEY` et `CLAUDE_MODEL` (identifiant d’un modèle accessible à ton compte Anthropic) ; sans ces deux valeurs, la carte OSM reste utilisable et l’assistant retourne une erreur de configuration. `ANTHROPIC_WEB_SEARCH_ENABLED=true` active la recherche Web Anthropic en complément des candidats OSM ; elle est désactivée par défaut et peut entraîner une facturation Anthropic supplémentaire.
+L’assistant nécessite aussi `GEMINI_API_KEY` et `GEMINI_MODEL` (par défaut `gemini-2.5-flash`) ; sans ces deux valeurs, la carte OSM reste utilisable et l’assistant retourne une erreur de configuration. La recherche Web Gemini est désactivée par défaut (`GEMINI_WEB_SEARCH_ENABLED=false`) et n’est pas utilisée comme source de restaurants.
 
 Adresses locales :
 
@@ -113,8 +113,8 @@ $env:MONGO_DATABASE = "feedme"
 $env:JWT_SECRET = "dev-only-secret-change-me-32-bytes-minimum"
 $env:FRONTEND_ORIGIN = "http://localhost:3000"
 $env:OSM_USER_AGENT = "FeedMe/1.0 (contact: ton-email@example.com)"
-$env:ANTHROPIC_API_KEY = "ta-cle-anthropic"
-$env:CLAUDE_MODEL = "modele-claude-disponible-dans-ton-compte"
+$env:GEMINI_API_KEY = "ta-cle-gemini"
+$env:GEMINI_MODEL = "gemini-2.5-flash"
 
 Set-Location backend
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload
@@ -214,7 +214,7 @@ Une fois le frontend, le backend et MongoDB démarrés :
 5. Vérifie que la déconnexion ramène à l’accueil et qu’une page protégée redirige vers la connexion.
 6. Sur `/carte`, autorise la géolocalisation ou saisis une adresse ; vérifie que les résultats sont fournis par l’API FastAPI et que les données absentes restent signalées comme indisponibles.
 7. Sur `/profil`, modifie puis enregistre le rayon et la langue de réponse de l’assistant. Une recherche ultérieure sans rayon explicite doit utiliser cette préférence.
-8. Sur l’accueil, teste l’assistant avec `ANTHROPIC_API_KEY` et `CLAUDE_MODEL` configurés ; un message qui fournit une adresse doit utiliser cette adresse pour la recherche.
+8. Sur l’accueil, teste l’assistant avec `GEMINI_API_KEY` et `GEMINI_MODEL` configurés ; un message qui fournit une adresse doit utiliser cette adresse pour la recherche.
 
 ## Diagnostic des recherches Overpass
 
@@ -223,6 +223,6 @@ Le backend attend jusqu'a 30 secondes pour une réponse Overpass. Cette durée e
 
 La page de connexion ne propose pas de réinitialisation du mot de passe : aucune procédure d’e-mail ou de récupération n’est configurée.
 
-Le chatbot nécessite une configuration Anthropic réelle avec ANTHROPIC_API_KEY et CLAUDE_MODEL. Sans ces variables, seule la recherche de restaurants reste utilisable. La préférence de langue est sauvegardée pour la consigne Claude, mais ne traduit pas l’interface. Le solde midi affiché dans l’interface est une valeur de démonstration et ne correspond à aucune donnée réelle.
+Le chatbot nécessite une configuration Gemini réelle avec GEMINI_API_KEY et GEMINI_MODEL. Sans ces variables, seule la recherche de restaurants reste utilisable. La préférence de langue est sauvegardée pour la consigne Gemini, mais ne traduit pas l’interface. Le solde midi affiché dans l’interface est une valeur de démonstration et ne correspond à aucune donnée réelle.
 
-Sources de configuration : [console Anthropic](https://console.anthropic.com/) pour la clé, [documentation Anthropic API](https://docs.anthropic.com/en/api/getting-started) pour l’API et [modèles Claude](https://docs.anthropic.com/en/docs/about-claude/models) pour choisir une valeur compatible avec CLAUDE_MODEL.
+Sources de configuration : [Google AI Studio](https://aistudio.google.com/apikey) pour la clé et [documentation Google Gen AI](https://googleapis.github.io/python-genai/) pour l’API et les modèles compatibles avec GEMINI_MODEL.

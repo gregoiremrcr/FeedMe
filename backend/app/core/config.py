@@ -21,11 +21,11 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: float = Field(default=30.0, gt=0, le=60)
     nominatim_url: str = "https://nominatim.openstreetmap.org/search"
     osm_user_agent: str = "FeedMe/1.0 (restaurant discovery; configure OSM_USER_AGENT)"
-    anthropic_api_key: str | None = None
-    claude_model: str = ""
-    claude_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
-    claude_max_tokens: int = Field(default=800, ge=128, le=4000)
-    anthropic_web_search_enabled: bool = False
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    gemini_max_output_tokens: int = Field(default=800, ge=128, le=4000)
+    gemini_web_search_enabled: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

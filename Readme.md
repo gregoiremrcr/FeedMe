@@ -27,7 +27,7 @@
 | Frontend | React / Next.js, CSS |
 | Backend | Python, FastAPI |
 | Base de données | MongoDB |
-| Intelligence artificielle | Claude |
+| Intelligence artificielle | Gemini (Google Gen AI) |
 | Images applicatives | Docker / GHCR |
 | CI/CD et contrôles de sécurité | GitHub Actions |
 
@@ -40,16 +40,16 @@ Navigateur / mobile
 Frontend React / Next.js
 	│  API REST (JSON)
 	▼
-Backend FastAPI ────── Claude
+Backend FastAPI ────── Gemini
 	│  ├─────────────── OpenStreetMap / Overpass
 	│  ├─────────────── Géocodage d’adresse OSM
 	▼
 MongoDB (comptes et préférences)
 ```
 
-Le frontend communique avec FastAPI via une API REST versionnée. FastAPI centralise l’authentification, les préférences de rayon, les recherches Overpass et l’orchestration de Claude. OpenStreetMap fournit les restaurants et leurs coordonnées ; Claude comprend les demandes et formule ses recommandations à partir des résultats OSM. Les prix, menus, avis et temps d’attente ne sont affichés que lorsqu’une source les fournit ; ils ne sont jamais déduits ou inventés. Les secrets et clés d’API ne doivent jamais être exposés dans le frontend ni ajoutés au dépôt.
+Le frontend communique avec FastAPI via une API REST versionnée. FastAPI centralise l’authentification, les préférences de rayon, les recherches Overpass et l’orchestration de Gemini. OpenStreetMap fournit les restaurants et leurs coordonnées ; Gemini comprend les demandes et formule ses recommandations à partir des résultats OSM. Les prix, menus, avis et temps d’attente ne sont affichés que lorsqu’une source les fournit ; ils ne sont jamais déduits ou inventés. Les secrets et clés d’API ne doivent jamais être exposés dans le frontend ni ajoutés au dépôt.
 
-La recherche de restaurants est exposée sous `POST /api/v1/restaurants/search`, les préférences de compte (rayon et langue de réponse) sous `GET/PATCH /api/v1/users/me/preferences`, et le chatbot sous `POST /api/v1/assistant/messages`. L’assistant exige `ANTHROPIC_API_KEY` et `CLAUDE_MODEL`; la recherche Web Anthropic est facultative (`ANTHROPIC_WEB_SEARCH_ENABLED=true`). La carte et la recherche OSM n’exigent pas de clé Claude. Une adresse saisie dans le chat prévaut sur la position géolocalisée pour cette recherche. Le rayon par défaut est de 1 000 m et se règle dans le profil.
+La recherche de restaurants est exposée sous `POST /api/v1/restaurants/search`, les préférences de compte (rayon et langue de réponse) sous `GET/PATCH /api/v1/users/me/preferences`, et le chatbot sous `POST /api/v1/assistant/messages`. L’assistant exige `GEMINI_API_KEY` et `GEMINI_MODEL`; la recherche Web Gemini est facultative et désactivée par défaut (`GEMINI_WEB_SEARCH_ENABLED=false`). La carte et la recherche OSM n’exigent pas de clé Gemini. Une adresse saisie dans le chat prévaut sur la position géolocalisée pour cette recherche. Le rayon par défaut est de 1 000 m et se règle dans le profil.
 
 ## Sécurité et qualité
 
@@ -187,7 +187,7 @@ La démonstration présentera le parcours complet : conversation avec le chatbot
 - [ ] Contrat d’API REST défini et documenté.
 - [ ] Authentification JWT et validation des entrées implémentées.
 - [ ] Instructions de lancement local et stack Docker documentées.
-- [ ] Intégration de Claude et contrôle du format des réponses réalisés.
+- [x] Intégration de Gemini et contrôle du format des réponses réalisés.
 - [ ] Pipeline GitHub Actions configuré.
 - [ ] Images applicatives publiées sur GHCR.
 - [ ] Démonstration complète préparée.
@@ -208,12 +208,12 @@ Backend Python FastAPI
     |- Gestion des conversations
     |- Extraction des preferences
     |- Recherche et classement des restaurants
-    |- Appel et validation de Claude
+    |- Appel et validation de Gemini
     `- Gestion centralisee des erreurs
           |
           |- MongoDB
           |- API de restaurants / cartes
-          `- Claude API
+          `- Gemini API
 ```
 
 ### Organisation du projet
@@ -251,16 +251,16 @@ FeedMe/
 
 La recherche de restaurants/cartes est implémentée côté backend avec OpenStreetMap/Overpass ; l’instance utilisée par défaut est PikaMap et reste configurable avec OVERPASS_URL.
 
-Claude ne doit pas etre utilise comme source directe de restaurants. Le backend doit :
+Gemini ne doit pas etre utilise comme source directe de restaurants. Le backend doit :
 
 1. recevoir et valider le message utilisateur ;
-2. demander a Claude d'extraire les criteres dans un format JSON ;
+2. demander a Gemini d'extraire les criteres via son function calling ;
 3. valider ce JSON avec un schema Pydantic ;
 4. rechercher les restaurants via l'API externe ;
 5. filtrer et classer les resultats ;
-6. demander a Claude de formuler une reponse claire a partir de resultats reels.
+6. demander a Gemini de formuler une reponse claire a partir de resultats reels.
 
-Les reponses de Claude doivent toujours etre validees avant d'etre utilisees. Une reponse invalide doit etre rejetee ou faire l'objet d'une nouvelle tentative controlee.
+Les paramètres de fonction fournis par Gemini sont toujours validés par Pydantic avant d'etre utilisés. Les restaurants et leurs données proviennent exclusivement d'OpenStreetMap.
 
 ### API REST previsionnelle
 
@@ -300,7 +300,7 @@ Frontend Next.js
           |
 Backend FastAPI
           |- MongoDB
-          |- Claude API
+          |- Gemini API
           `- API restaurants
 ```
 
@@ -311,7 +311,7 @@ La production sera traitee dans une phase ulterieure. Les images validees seront
 1. **Fondations** : frontend, backend, Docker Compose, MongoDB et route `/health`.
 2. **Authentification** : inscription, connexion, JWT et protection des routes.
 3. **Recherche** : choix de l'API restaurants, position, adresse et filtres.
-4. **Chatbot** : integration de Claude, prompts, schemas JSON et conversations.
+4. **Chatbot** : integration de Gemini, function calling, prompts et conversations.
 5. **Qualite** : tests, gestion des erreurs, limitation des requetes et scans de securite.
 6. **Livraison** : pipeline GitHub Actions, publication GHCR et preparation de la demonstration.
 
@@ -323,7 +323,6 @@ Aucune licence n’est définie pour le moment.
 ## Limites connues
 
 - La réinitialisation du mot de passe n’est pas implémentée.
-- Claude est appelé uniquement si ANTHROPIC_API_KEY et CLAUDE_MODEL sont configurés ; l’intégration réelle, les quotas et les coûts Anthropic restent à valider.
-- La langue du profil est enregistrée et transmise à Claude, mais elle ne localise pas l’interface.
+- Gemini est appelé uniquement si GEMINI_API_KEY et GEMINI_MODEL sont configurés ; la langue du profil lui est transmise, mais elle ne localise pas l’interface.
 - Le solde midi affiché est une valeur statique de démonstration, sans source métier réelle.
 - Le chatbot appelle le backend mais ne persiste pas encore les conversations ; il ne doit pas être présenté comme une intégration métier complète.

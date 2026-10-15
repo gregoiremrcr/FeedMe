@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+*, *::before, *::after { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+img, svg { max-width: 100%; }
+
 @theme inline {
   --font-headline: var(--font-garamond);
   --font-body: var(--font-manrope);
@@ -24,6 +30,7 @@
 
   --color-on-surface: #3a302a;
   --color-on-surface-variant: #605850;
+  --color-accent: #e9b44c;
 }
 
 body {
@@ -31,3 +38,6 @@ body {
   color: var(--color-on-surface);
   font-family: var(--font-body), sans-serif;
 }
+
+.card-shadow { box-shadow: 0 8px 24px rgb(58 48 42 / 0.08); }
+.budget-range { accent-color: var(--color-primary); }

@@ -75,6 +75,7 @@ export const restaurantApi = {
     dish_type?: string;
     max_price_eur?: number;
     max_wait_minutes?: number;
+    sort_by?: "distance" | "relevance" | "rating";
   }) => apiRequest<RestaurantSearchResponse>("/api/v1/restaurants/search", {
     method: "POST",
     body: JSON.stringify(input),

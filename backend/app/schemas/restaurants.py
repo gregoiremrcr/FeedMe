@@ -4,17 +4,26 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+Radius = Literal[500, 1000, 2000, 5000]
+Cuisine = Literal["french", "italian", "japanese", "indian", "fast_food", "cafe", "other"]
+Dietary = Literal["vegetarian", "vegan", "halal", "gluten_free"]
+Allergy = Literal["peanuts", "seafood", "dairy", "gluten"]
+MealType = Literal["restaurant", "fast_food", "cafe", "takeaway"]
+SortBy = Literal["distance", "relevance", "rating"]
+
+
 class RestaurantSearchRequest(BaseModel):
     lat: float | None = Field(default=None, ge=-90, le=90)
     lon: float | None = Field(default=None, ge=-180, le=180)
     address: str | None = Field(default=None, min_length=3, max_length=300)
-    radius_m: int | None = Field(default=None, ge=100, le=10_000)
-    cuisines: list[str] = Field(default_factory=list, max_length=10)
-    dietary: list[str] = Field(default_factory=list, max_length=10)
-    allergies: list[str] = Field(default_factory=list, max_length=10)
-    dish_type: str | None = Field(default=None, max_length=100)
+    radius_m: Radius | None = None
+    cuisines: list[Cuisine] = Field(default_factory=list, max_length=10)
+    dietary: list[Dietary] = Field(default_factory=list, max_length=10)
+    allergies: list[Allergy] = Field(default_factory=list, max_length=10)
+    dish_type: MealType | None = None
     max_price_eur: float | None = Field(default=None, gt=0, le=1000)
     max_wait_minutes: int | None = Field(default=None, ge=0, le=600)
+    sort_by: SortBy = "distance"
 
     @model_validator(mode="after")
     def validate_location(self) -> "RestaurantSearchRequest":
@@ -41,14 +50,15 @@ class Restaurant(BaseModel):
     address: str | None = Field(default=None, max_length=500)
     cuisines: list[str] = Field(default_factory=list)
     kind: str
+    takeaway: bool | None = None
     website: str | None = Field(default=None, max_length=2000)
     phone: str | None = Field(default=None, max_length=100)
     opening_hours: str | None = Field(default=None, max_length=300)
     dietary_tags: list[str] = Field(default_factory=list, max_length=30)
-    price: None = None
-    wait_minutes: None = None
+    price: float | None = None
+    wait_minutes: int | None = None
     menu_url: str | None = Field(default=None, max_length=2000)
-    rating: None = None
+    rating: float | None = Field(default=None, ge=0, le=5)
     sources: list[dict[str, str]] = Field(default_factory=list)
 
 

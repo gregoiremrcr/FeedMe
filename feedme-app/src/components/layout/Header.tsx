@@ -13,7 +13,7 @@ const links = [
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user, loading, initializationError } = useAuth();
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-surface/90 backdrop-blur-xl">
@@ -83,7 +83,19 @@ export default function Header() {
             </>
           )}
 
-          {!loading && !user && (
+          {!loading && !user && initializationError && (
+            <Link
+              href="/connexion"
+              role="alert"
+              title={initializationError}
+              aria-label={`API indisponible : ${initializationError}`}
+              className="max-w-32 truncate rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-800 sm:max-w-64"
+            >
+              API indisponible
+            </Link>
+          )}
+
+          {!loading && !user && !initializationError && (
             <Link
               href="/connexion"
               className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90"

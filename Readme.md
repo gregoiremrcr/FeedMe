@@ -320,3 +320,10 @@ Pour suivre l'implementation et savoir quoi faire a chaque phase, consulter le [
 ## Licence
 
 Aucune licence n’est définie pour le moment.
+## Limites connues
+
+- La réinitialisation du mot de passe n’est pas implémentée.
+- Claude est appelé uniquement si ANTHROPIC_API_KEY et CLAUDE_MODEL sont configurés ; l’intégration réelle, les quotas et les coûts Anthropic restent à valider.
+- La langue du profil est enregistrée et transmise à Claude, mais elle ne localise pas l’interface.
+- Le solde midi affiché est une valeur statique de démonstration, sans source métier réelle.
+- Le chatbot appelle le backend mais ne persiste pas encore les conversations ; il ne doit pas être présenté comme une intégration métier complète.

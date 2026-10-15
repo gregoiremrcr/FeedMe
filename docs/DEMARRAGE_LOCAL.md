@@ -219,3 +219,10 @@ Une fois le frontend, le backend et MongoDB démarrés :
 ## Diagnostic des recherches Overpass
 
 Le backend attend jusqu'a 30 secondes pour une réponse Overpass. Cette durée est configurable avec `OVERPASS_TIMEOUT_SECONDS` (maximum : 60 secondes). Si la recherche renvoie encore `502`, le service public peut etre lent ou indisponible ; consulte `docker compose logs -f backend`. Apres une modification du delai dans `.env`, recree le backend avec `docker compose up -d --build backend`.
+## Fonctionnalités non disponibles
+
+La page de connexion ne propose pas de réinitialisation du mot de passe : aucune procédure d’e-mail ou de récupération n’est configurée.
+
+Le chatbot nécessite une configuration Anthropic réelle avec ANTHROPIC_API_KEY et CLAUDE_MODEL. Sans ces variables, seule la recherche de restaurants reste utilisable. La préférence de langue est sauvegardée pour la consigne Claude, mais ne traduit pas l’interface. Le solde midi affiché dans l’interface est une valeur de démonstration et ne correspond à aucune donnée réelle.
+
+Sources de configuration : [console Anthropic](https://console.anthropic.com/) pour la clé, [documentation Anthropic API](https://docs.anthropic.com/en/api/getting-started) pour l’API et [modèles Claude](https://docs.anthropic.com/en/docs/about-claude/models) pour choisir une valeur compatible avec CLAUDE_MODEL.

@@ -110,3 +110,10 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 5. Conversations et intégration Claude.
 6. Qualité, CI/CD et déploiement.
 7. Préparation de la démonstration.
+## Points explicitement non livrés
+
+- [ ] Ajouter la réinitialisation du mot de passe : demande, jeton temporaire, expiration, envoi d’e-mail et invalidation.
+- [ ] Valider l’intégration Anthropic en environnement réel : clé, modèle Claude autorisé, quotas, coûts, timeouts et erreurs.
+- [ ] Relier la préférence de langue à un comportement vérifiable ; elle est actuellement stockée et envoyée à Claude, mais ne localise pas l’interface.
+- [ ] Remplacer le solde midi statique du frontend par une source métier réelle, ou le retirer de l’interface.
+- [ ] Finaliser le chatbot : persistance des conversations, routes dédiées, tests d’intégration Anthropic et validation du parcours complet.

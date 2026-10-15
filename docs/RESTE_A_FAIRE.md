@@ -261,3 +261,10 @@ Les cases de cette checklist sont toutes ouvertes au départ. Elles ne doivent �
 - [`PLAN_TACHES.md`](PLAN_TACHES.md) — suivi des tâches existant, à réconcilier avec cette checklist.
 - [`feedme-project.prompt.md`](feedme-project.prompt.md) — règles de travail et contraintes transverses.
 - [`PROMPT_AUTHENTIFICATION.md`](PROMPT_AUTHENTIFICATION.md) — prompt de réalisation pour terminer et fiabiliser l’intégration frontend/backend de l’authentification.
+## Limites fonctionnelles à ne pas présenter comme livrées
+
+- Réinitialisation du mot de passe : aucune route, aucun jeton à durée limitée et aucun parcours d’e-mail ne sont implémentés. La récupération de compte reste à développer.
+- Anthropic et Claude : l’appel backend existe, mais il dépend de ANTHROPIC_API_KEY et CLAUDE_MODEL, n’est pas disponible sans configuration valide et doit encore être vérifié avec les vrais identifiants, quotas et coûts du compte Anthropic.
+- Langue : la préférence est enregistrée et transmise comme consigne à Claude ; elle ne localise pas l’interface et son effet doit encore être couvert par un test d’intégration avec Claude.
+- Solde midi : le montant affiché dans le frontend est une valeur statique de démonstration. Il n’est relié à aucun compte, fournisseur de paiement ou système de restauration et ne doit pas être présenté comme un solde réel.
+- Chatbot : le frontend appelle bien la route backend, mais l’historique n’est pas persisté, les conversations ne disposent pas encore de routes dédiées et l’intégration réelle avec Anthropic reste à valider en environnement configuré. Ce n’est pas encore une fonctionnalité métier complète.

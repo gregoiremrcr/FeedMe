@@ -6,7 +6,7 @@ import { KIND_LABELS, Spot } from "@/lib/spots";
 export default function SpotCard({ spot }: { spot: Spot }) {
   return (
     <Link
-      href="/carte"
+      href="/"
       className="flex items-center justify-between gap-4 rounded-xl bg-surface p-3 transition-shadow hover:shadow-md"
     >
       <div className="min-w-0">

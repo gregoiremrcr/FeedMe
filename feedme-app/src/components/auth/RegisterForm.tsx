@@ -10,6 +10,7 @@ import { CAMPUSES, registerSchema, RegisterInput } from "@/lib/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
 import Field, { IconInput, PasswordInput, inputClass } from "@/components/auth/Field";
 
+
 export default function RegisterForm() {
   const router = useRouter();
   const { register: signUp } = useAuth();

@@ -3,7 +3,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
 Radius = Literal[500, 1000, 2000, 5000]
 Cuisine = Literal["french", "italian", "japanese", "indian", "fast_food", "cafe", "other"]
 Dietary = Literal["vegetarian", "vegan", "halal", "gluten_free"]

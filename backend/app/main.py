@@ -5,10 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
+from app.api.v1.assistant import router as assistant_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.restaurants import router as restaurants_router
 from app.core.config import get_settings
 from app.core.database import create_mongo_client
+from app.core.security import limiter
 
 
 @asynccontextmanager
@@ -34,11 +39,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[get_settings().frontend_origin],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["Content-Type"],
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(restaurants_router, prefix="/api/v1", tags=["restaurants"])
+app.include_router(assistant_router, prefix="/api/v1", tags=["assistant"])
 
 
 @app.get("/health", tags=["system"])

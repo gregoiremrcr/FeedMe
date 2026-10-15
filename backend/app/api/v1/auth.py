@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -10,9 +11,11 @@ from pymongo.errors import DuplicateKeyError
 
 from app.core.config import get_settings
 from app.core.database import get_database
+from app.core.security import limiter, verify_auth_origin
 
 router = APIRouter()
 password_hash = PasswordHash.recommended()
+EMAIL_PATTERN = r"(?:[A-Za-z0-9_'+-]+\.)*[A-Za-z0-9_'+-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}"
 
 
 class RegisterRequest(BaseModel):
@@ -21,18 +24,33 @@ class RegisterRequest(BaseModel):
     campus: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=8, max_length=128)
 
+    @field_validator("name", "campus")
+    @classmethod
+    def normalize_required_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Ce champ ne peut pas être vide")
+        return normalized
+
+    @field_validator("name")
+    @classmethod
+    def validate_name_length(cls, value: str) -> str:
+        if len(value) < 2:
+            raise ValueError("Le nom doit contenir au moins 2 caractères")
+        return value
+
     @field_validator("email")
     @classmethod
     def validate_email(cls, value: str) -> str:
         normalized = value.strip().lower()
-        if "@" not in normalized or normalized.startswith("@") or normalized.endswith("@"):
+        if not re.fullmatch(EMAIL_PATTERN, normalized):
             raise ValueError("Adresse email invalide")
         return normalized
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: str) -> str:
-        if not any(character.isalpha() for character in value) or not any(character.isdigit() for character in value):
+        if not re.search(r"[A-Za-z]", value) or not re.search(r"[0-9]", value):
             raise ValueError("Le mot de passe doit contenir une lettre et un chiffre")
         return value
 
@@ -44,7 +62,10 @@ class LoginRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
-        return value.strip().lower()
+        normalized = value.strip().lower()
+        if not re.fullmatch(EMAIL_PATTERN, normalized):
+            raise ValueError("Adresse email invalide")
+        return normalized
 
 
 class PublicUser(BaseModel):
@@ -74,13 +95,14 @@ def create_access_token(user_id: str) -> str:
 
 
 def set_auth_cookie(response: Response, token: str) -> None:
+    settings = get_settings()
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,
+        secure=settings.auth_cookie_secure,
         samesite="lax",
-        max_age=get_settings().jwt_expire_minutes * 60,
+        max_age=settings.jwt_expire_minutes * 60,
         path="/",
     )
 
@@ -107,11 +129,24 @@ async def current_user(
     return user_response(document)
 
 
+async def optional_current_user(
+    request: Request,
+    database: AsyncIOMotorDatabase = Depends(get_database),  # noqa: B008
+) -> PublicUser | None:
+    """Allow public restaurant search while using account preferences when signed in."""
+    if not request.cookies.get("access_token"):
+        return None
+    return await current_user(request, database)
+
+
 @router.post("/register", response_model=PublicUser, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def register(
+    request: Request,
     payload: RegisterRequest,
     response: Response,
     database: AsyncIOMotorDatabase = Depends(get_database),  # noqa: B008
+    _: None = Depends(verify_auth_origin),
 ) -> PublicUser:
     now = datetime.now(UTC)
     document = {
@@ -119,6 +154,7 @@ async def register(
         "password_hash": password_hash.hash(payload.password),
         "display_name": payload.name.strip(),
         "campus": payload.campus.strip(),
+        "preferences": {"radius_m": 1000, "language": "fr"},
         "created_at": now,
         "updated_at": now,
         "last_login_at": now,
@@ -135,10 +171,13 @@ async def register(
 
 
 @router.post("/login", response_model=PublicUser)
+@limiter.limit("10/minute")
 async def login(
+    request: Request,
     payload: LoginRequest,
     response: Response,
     database: AsyncIOMotorDatabase = Depends(get_database),  # noqa: B008
+    _: None = Depends(verify_auth_origin),
 ) -> PublicUser:
     document = await database.users.find_one({"email": payload.email, "is_active": True})
     if document is None or not password_hash.verify(payload.password, document["password_hash"]):
@@ -158,5 +197,14 @@ async def me(user: PublicUser = Depends(current_user)) -> PublicUser:  # noqa: B
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(response: Response) -> None:
-    response.delete_cookie("access_token", path="/")
+async def logout(
+    response: Response,
+    _: None = Depends(verify_auth_origin),
+) -> None:
+    response.delete_cookie(
+        "access_token",
+        path="/",
+        secure=get_settings().auth_cookie_secure,
+        httponly=True,
+        samesite="lax",
+    )

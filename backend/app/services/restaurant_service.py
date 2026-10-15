@@ -1,50 +1,52 @@
-import httpx
-import urllib.parse
+import os
+import json
+from dotenv import load_dotenv  # <-- 1. Importer load_dotenv
+from google import genai
+from google.genai import types
 from app.schemas.restaurant import SearchParams
-async def search_restaurants_from_osm(params: SearchParams):
-    overpass_query = f"""
-    [out:json][timeout:8];
-    node["amenity"="restaurant"](around:{params.radius},{params.lat},{params.lon});
-    out body 15;
+
+load_dotenv()  # <-- 2. Charger le fichier .env de ton dossier backend
+
+# Initialisation du client (il récupérera automatiquement GEMINI_API_KEY)
+client = genai.Client()
+
+async def search_restaurants_with_ai(params: SearchParams):
+    prompt = f"""
+    Tu es l'assistant intelligent de l'application de découverte de restaurants "FeedMe".
+    Un utilisateur se trouve aux coordonnées géographiques suivantes : Latitude {params.lat}, Longitude {params.lon}.
+    Il cherche des restaurants dans un rayon de {params.radius} mètres.
+    {f"Filtre de cuisine souhaité : {params.cuisine}" if params.cuisine else ""}
+    {f"Niveau de budget souhaité (1 à 3) : {params.budget}" if params.budget else ""}
+
+    Génère une liste réaliste de 3 à 5 restaurants situés à ces coordonnées.
+    Réponds STRICTEMENT sous la forme d'un tableau JSON valide contenant des objets avec ces clés :
+    id, name, lat, lon, cuisine, budgetLevel, address. Pas de texte superflu.
     """
-    
-    url = f"https://overpass-api.de/api/interpreter?data={urllib.parse.quote(overpass_query)}"
-    
-    headers = {
-        "Accept": "*/*",
-        "User-Agent": "FeedMeApp/1.0 (Student Project)"
-    }
-    
+
     try:
-            print(f"🔍 [OSM] Requête lancée pour lat: {params.lat}, lon: {params.lon}")
-            async with httpx.AsyncClient(timeout=8.0) as client:
-                response = await client.get(url, headers=headers)
-                
-                print(f"📡 [OSM] Code statut HTTP reçu: {response.status_code}")
-                
-                if response.status_code != 200:
-                    print(f" [OSM] Erreur serveur externe: {response.text}")
-                    return get_fallback_restaurants(params)
-                    
-                data = response.json()
-                elements = data.get("elements", [])
-                
-                if not elements:
-                    print(" [OSM] Aucun restaurant trouvé dans cette zone par OSM.")
-                    return get_fallback_restaurants(params)
-                    
-                print(f" [OSM] Succès ! {len(elements)} restaurants bruts trouvés.")
-                # ... (le reste de ton code de mapping)
-                
+        # On force Gemini à répondre avec un format JSON strict via la configuration du modèle
+        response = client.models.generate_content(
+            model='gemini-3.8-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.7,
+                response_mime_type="application/json"
+            ),
+        )
+        
+        # Transformation de la réponse textuelle de l'IA en objets exploitables par l'API
+        return json.loads(response.text)
+
     except Exception as e:
-            print(f" [ERREUR CRITIQUE / TIMEOUT]: {type(e).__name__} - {e}")
-            return get_fallback_restaurants(params)
+        print(f"❌ [ERREUR IA] : {e}")
+        # En cas de panne de l'IA, on bascule sur les données de secours pour garder l'app stable
+        return get_fallback_restaurants(params)
 
 def get_fallback_restaurants(params: SearchParams):
     mock_list = [
-        {"id": "101", "name": "Le Petit Bistro", "lat": params.lat, "lon": params.lon, "cuisine": "french", "budgetLevel": 2, "address": "10 Rue de Paris, Paris"},
-        {"id": "102", "name": "Pizza Bella", "lat": params.lat, "lon": params.lon, "cuisine": "italian", "budgetLevel": 1, "address": "15 Avenue des Fleurs, Paris"},
-        {"id": "103", "name": "Sakura Sushi", "lat": params.lat, "lon": params.lon, "cuisine": "japanese", "budgetLevel": 3, "address": "8 Boulevard Saint-Michel, Paris"}
+        {"id": "201", "name": "Le Bistrot de l'IA", "lat": params.lat, "lon": params.lon, "cuisine": "française", "budgetLevel": 2, "address": "12 Rue de la République"},
+        {"id": "202", "name": "Prompt Pizza", "lat": params.lat, "lon": params.lon, "cuisine": "italienne", "budgetLevel": 1, "address": "45 Avenue des Algorithmes"},
+        {"id": "203", "name": "Neural Sushi", "lat": params.lat, "lon": params.lon, "cuisine": "japonaise", "budgetLevel": 3, "address": "8 Boulevard du Réseau"}
     ]
     
     filtered = mock_list

@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
+
 from app.api.v1 import assistant, restaurants
 from app.api.v1.auth import PublicUser, current_user
 from app.core.config import Settings
@@ -12,7 +14,6 @@ from app.core.database import get_database
 from app.main import app
 from app.schemas.restaurants import Location, Restaurant, RestaurantSearchRequest
 from app.services import osm
-from fastapi.testclient import TestClient
 
 
 class FakeUsers:

@@ -1,13 +1,14 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
+from bson import ObjectId
+from fastapi.testclient import TestClient
+
 from app.api.v1 import auth
 from app.core import security
 from app.core.config import Settings
 from app.core.database import get_database
 from app.main import app
-from bson import ObjectId
-from fastapi.testclient import TestClient
 
 
 class InsertResult:

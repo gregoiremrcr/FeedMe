@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SearchX } from "lucide-react";
-import { getRecommendations, Recommendations } from "../../lib/recommendations";
-import { formatPrice } from "../../lib/restaurant";
-import { Criteria } from "../../lib/search";
+import { getRecommendations, Recommendations } from "@/lib/recommendations";
+import { formatPrice } from "@/lib/restaurant";
+import { Criteria } from "@/lib/search";
+import BudgetExamples from "./BudgetExamples";
 import ResultsView from "./ResultsView";
 import SearchForm from "./SearchForm";
 
@@ -47,20 +48,26 @@ export default function HomeSearch() {
 
   return (
     <section className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-12 lg:py-16">
-      <div className="flex max-w-3xl flex-col gap-10">
-        <div>
-          <h1 className="font-headline text-5xl font-medium leading-[1.05] tracking-tight sm:text-6xl">
-            T’as faim ? Dis-nous{" "}
-            <span className="rounded-md bg-accent px-2 [box-decoration-break:clone]">
-              ce qu’il te reste.
-            </span>
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-on-surface-variant">
-            Ton adresse, ton budget, ton envie : on te sort les meilleurs plans autour de toi.
-          </p>
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-x-12">
+        <div className="flex flex-col gap-10 lg:col-span-7">
+          <div>
+            <h1 className="font-headline text-5xl font-medium leading-[1.05] tracking-tight sm:text-6xl">
+              T’as faim ? Dis-nous{" "}
+              <span className="rounded-md bg-accent px-2 [box-decoration-break:clone]">
+                ce qu’il te reste.
+              </span>
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-on-surface-variant">
+              Ton adresse, ton budget, ton envie : on te sort les meilleurs plans autour de toi.
+            </p>
+          </div>
+
+          <SearchForm onSubmit={search} />
         </div>
 
-        <SearchForm onSubmit={search} />
+        <div className="hidden lg:col-span-5 lg:block lg:pt-4">
+          <BudgetExamples />
+        </div>
       </div>
 
       <div ref={resultsRef} className="mt-14 scroll-mt-24" aria-live="polite">
@@ -91,7 +98,7 @@ export default function HomeSearch() {
         )}
 
         {empty && criteria && (
-          <div className="max-w-xl rounded-2xl border border-surface-container-high bg-surface-container-lowest p-8">
+          <div className="max-w-xl rounded-2xl border border-surface-container-high bg-surface-container-lowest p-8 card-shadow">
             <SearchX size={28} aria-hidden="true" className="text-primary" />
             <h2 className="mt-4 font-headline text-3xl font-medium leading-tight">
               Rien à {formatPrice(criteria.budget)} par ici.

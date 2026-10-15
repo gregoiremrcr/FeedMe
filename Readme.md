@@ -249,7 +249,7 @@ FeedMe/
 
 ### Recherche de restaurants et IA
 
-Une API de restaurants/cartes devra etre ajoutee au projet. Deux options sont possibles : Google Places API, plus complete mais payante, ou OpenStreetMap/Overpass, gratuite mais moins homogene.
+La recherche de restaurants/cartes est implémentée côté backend avec OpenStreetMap/Overpass ; l’instance utilisée par défaut est PikaMap et reste configurable avec OVERPASS_URL.
 
 Claude ne doit pas etre utilise comme source directe de restaurants. Le backend doit :
 

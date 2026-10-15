@@ -5,7 +5,7 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 ## Décisions à prendre
 
 - [ ] Confirmer les versions de Next.js, Python et FastAPI, ainsi que les outils de tests et de formatage.
-- [ ] Choisir le fournisseur de recherche de restaurants : Google Places ou OpenStreetMap/Overpass ; documenter les coûts, quotas, attribution et limites.
+- [x] Choisir OpenStreetMap/Overpass comme fournisseur de recherche de restaurants ; l’instance PikaMap est configurable avec OVERPASS_URL. Documenter les coûts, quotas, attribution et limites avant la mise en production.
 - [ ] Préciser les exigences de géolocalisation, la gestion du consentement et le comportement si l’utilisateur préfère saisir une adresse.
 - [ ] Confirmer le fournisseur d’hébergement du frontend (CloudFront/Amplify) et la configuration MongoDB Atlas cible.
 - [ ] Définir la politique de conservation/suppression des comptes, conversations et recherches, ainsi que les besoins de conformité applicables.

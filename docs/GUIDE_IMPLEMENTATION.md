@@ -7,7 +7,7 @@ Ce document transforme la documentation du projet en feuille de route opération
 - Le dépôt contient un squelette Next.js dans `feedme-app/`.
 - Le backend FastAPI est présent dans `backend/` avec configuration MongoDB et routes JWT.
 - MongoDB, Docker Compose, l'authentification, les tests frontend et la CI sont partiellement implémentés ; l'API restaurants backend, Claude et AWS restent à réaliser.
-- Le fournisseur de restaurants reste à choisir : Google Places ou OpenStreetMap/Overpass.
+- Le fournisseur de restaurants retenu est OpenStreetMap/Overpass, via l’instance PikaMap configurable avec OVERPASS_URL.
 - Aucun secret réel ne doit être ajouté au dépôt.
 
 ## 2. Ordre de réalisation
@@ -33,7 +33,7 @@ Décider et noter les versions de Next.js, Node.js, Python, FastAPI, MongoDB, de
 
 ### 3.2 Fournisseur de restaurants
 
-Comparer Google Places et OpenStreetMap/Overpass sur le coût, les quotas, la couverture, les données disponibles, les conditions d'utilisation et l'attribution. Choisir un fournisseur avant de coder l'adaptateur.
+Documenter les coûts, quotas, couverture, données disponibles, conditions d'utilisation et attribution d’OpenStreetMap/Overpass avant la mise en production.
 
 **Décision importante :** Claude ne fournit jamais la vérité sur les restaurants. Il peut extraire des critères et rédiger une réponse, mais les établissements viennent toujours de l'API choisie.
 

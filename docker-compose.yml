@@ -31,7 +31,7 @@ services:
       CLAUDE_MODEL: ${CLAUDE_MODEL:-}
       ANTHROPIC_WEB_SEARCH_ENABLED: ${ANTHROPIC_WEB_SEARCH_ENABLED:-false}
       OSM_USER_AGENT: "${OSM_USER_AGENT:-FeedMe/1.0 (contact: configure-me)}"
-      OVERPASS_URL: ${OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      OVERPASS_URL: ${OVERPASS_URL:-https://api-overpass.pikamap.fr/api/interpreter}
       OVERPASS_TIMEOUT_SECONDS: ${OVERPASS_TIMEOUT_SECONDS:-30}
       NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org/search}
     ports:

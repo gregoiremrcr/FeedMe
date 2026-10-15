@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/restaurant";
 import { Recommendations } from "@/lib/recommendations";
 import { KIND_LABELS } from "@/lib/spots";
 import { Criteria } from "@/lib/search";
+import FavoriteButton from "@/components/favorites/FavoriteButton";
 
 const CampusMap = dynamic(() => import("@/components/map/CampusMap"), {
   ssr: false,
@@ -41,7 +42,7 @@ export default function ResultsView({ criteria, result }: Props) {
           {visible.map(({ spot, reason }, index) => {
             const active = spot.id === selectedId;
             return (
-              <li key={spot.id} className="border-b border-surface-container-high">
+              <li key={spot.id} className="relative">
                 <button
                   type="button"
                   aria-pressed={active}
@@ -80,10 +81,14 @@ export default function ResultsView({ criteria, result }: Props) {
                       {spot.walkMinutes} min à pied · {spot.distanceM} m · {KIND_LABELS[spot.kind]}
                     </span>
 
-                    <span className="mt-2.5 block text-sm leading-relaxed">{reason}</span>
+                    <span className="mt-2.5 block pr-10 text-sm leading-relaxed">{reason}</span>
                   </span>
                 </button>
+                <div className="absolute bottom-3 right-3">
+                <FavoriteButton spot={spot} />
+                </div>
               </li>
+
             );
           })}
         </ol>

@@ -101,7 +101,7 @@ def set_auth_cookie(response: Response, token: str) -> None:
         value=token,
         httponly=True,
         secure=settings.auth_cookie_secure,
-        samesite="lax",
+        samesite="none",
         max_age=settings.jwt_expire_minutes * 60,
         path="/",
     )
@@ -206,5 +206,5 @@ async def logout(
         path="/",
         secure=get_settings().auth_cookie_secure,
         httponly=True,
-        samesite="lax",
+        samesite="none",
     )

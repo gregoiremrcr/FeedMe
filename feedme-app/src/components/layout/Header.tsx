@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Flame, MapPin, Bot, Wallet, User } from "lucide-react";
+import { Flame, MapPin, Bot, Wallet, User, Menu, X } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const links = [
@@ -14,10 +15,11 @@ const links = [
 export default function Header() {
   const pathname = usePathname();
   const { user, loading, initializationError } = useAuth();
+  const [open, setOpen] = useState(false);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-surface/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-6 lg:px-12">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 md:h-20 lg:px-12">
         <Link href="/" className="flex shrink-0 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-on-primary">
             <Flame size={22} />
@@ -53,14 +55,14 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <button
+        <div className="hidden shrink-0 items-center gap-3 md:flex">
+          <Link href="/assistant"
             type="button"
             className="hidden items-center gap-2 rounded-full bg-primary-fixed px-3.5 py-1.5 text-xs font-semibold text-on-primary-fixed transition-all hover:bg-primary-container hover:text-on-primary-container xl:flex"
           >
             <Bot size={17} className="text-primary" />
             Assistant IA
-          </button>
+          </Link>
 
           {!loading && user && (
             <>
@@ -105,6 +107,8 @@ export default function Header() {
           )}
         </div>
       </div>
+      <button type="button" aria-expanded={open} aria-label={open ? "Fermer le menu" : "Ouvrir le menu"} onClick={() => setOpen(!open)} className="absolute right-4 top-4 rounded-lg p-2 md:hidden">{open ? <X /> : <Menu />}</button>
+      {open && <nav aria-label="Navigation mobile" className="border-t border-surface-container-high bg-surface px-4 py-3 shadow-lg md:hidden">{links.map((link) => <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-3 font-semibold hover:bg-surface-container">{link.label}</Link>)}<Link href="/assistant" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-3 font-semibold hover:bg-surface-container">Assistant</Link><Link href="/connexion" onClick={() => setOpen(false)} className="mt-2 block rounded-xl bg-primary px-3 py-3 text-center font-bold text-on-primary">Connexion</Link></nav>}
     </header>
   );
 }

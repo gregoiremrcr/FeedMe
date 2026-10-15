@@ -1,6 +1,7 @@
 import asyncio
 import math
 import time
+import unicodedata
 from collections import OrderedDict
 from typing import Any
 
@@ -99,6 +100,26 @@ def _safe_http_url(value: str | None) -> str | None:
     return None
 
 
+def _normalize(value: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKD", value.casefold()) if not unicodedata.combining(c)).replace("-", "_").replace(" ", "_")
+
+
+CUISINE_ALIASES = {
+    "french": {"french", "francais", "française", "french_cuisine"},
+    "italian": {"italian", "italien", "pizza"},
+    "japanese": {"japanese", "japonais", "sushi", "ramen"},
+    "indian": {"indian", "indien"},
+    "fast_food": {"fast_food", "burger", "kebab"},
+    "cafe": {"cafe", "coffee_shop"},
+}
+
+
+def _matches_cuisine(values: list[str], requested: str) -> bool:
+    normalized = {_normalize(value) for value in values}
+    aliases = CUISINE_ALIASES.get(requested, set())
+    return bool(normalized & aliases)
+
+
 def _to_restaurant(element: dict[str, Any], origin: Location) -> Restaurant | None:
     raw_tags = element.get("tags")
     tags = {key: value for key, value in raw_tags.items() if isinstance(key, str) and isinstance(value, str)} if isinstance(raw_tags, dict) else {}
@@ -116,7 +137,7 @@ def _to_restaurant(element: dict[str, Any], origin: Location) -> Restaurant | No
 
     kind = tags.get("amenity", "restaurant")
     cuisine = [item.strip()[:80] for item in tags.get("cuisine", "").split(";") if item.strip()][:20]
-    dietary = [key.removeprefix("diet:")[:80] for key, value in tags.items() if key.startswith("diet:") and value == "yes"][:30]
+    dietary = [key.removeprefix("diet:")[:80] for key, value in tags.items() if key.startswith("diet:") and value.casefold() in {"yes", "1", "true"}][:30]
     osm_type = element.get("type", "node")
     osm_id = element.get("id")
     if not isinstance(osm_id, int) or osm_id < 0 or osm_type not in {"node", "way", "relation"}:
@@ -131,6 +152,7 @@ def _to_restaurant(element: dict[str, Any], origin: Location) -> Restaurant | No
         address=(_address(tags) or "")[:500] or None,
         cuisines=cuisine,
         kind=kind,
+        takeaway=(tags.get("takeaway", "").casefold() == "yes") if "takeaway" in tags else None,
         website=website,
         phone=(tags.get("phone") or tags.get("contact:phone") or "")[:100] or None,
         opening_hours=(tags.get("opening_hours") or "")[:300] or None,
@@ -195,19 +217,29 @@ out center tags;
         if restaurant:
             results[restaurant.id] = restaurant
 
-    normalized = sorted(results.values(), key=lambda restaurant: restaurant.distance_m)[:100]
-    cuisine_terms = [value.casefold() for value in request.cuisines]
-    if cuisine_terms:
-        normalized = [
-            restaurant for restaurant in normalized
-            if not restaurant.cuisines
-            or any(term in " ".join(restaurant.cuisines).casefold() for term in cuisine_terms)
-        ]
+    normalized = sorted(results.values(), key=lambda restaurant: restaurant.distance_m)
+    if request.cuisines:
+        normalized = [r for r in normalized if ("other" in request.cuisines and not any(_matches_cuisine(r.cuisines, key) for key in CUISINE_ALIASES)) or any(_matches_cuisine(r.cuisines, key) for key in request.cuisines)]
+    if request.dietary:
+        normalized = [r for r in normalized if all(_normalize(value) in {_normalize(tag) for tag in r.dietary_tags} for value in request.dietary)]
+    if request.dish_type:
+        normalized = [r for r in normalized if (request.dish_type == "takeaway" and r.takeaway is True) or r.kind == request.dish_type]
+    if request.max_wait_minutes is not None:
+        normalized = [r for r in normalized if r.wait_minutes is not None and r.wait_minutes <= request.max_wait_minutes]
+    if request.sort_by == "rating":
+        normalized = sorted(normalized, key=lambda r: (r.rating is None, -(r.rating or 0), r.distance_m))
+    elif request.sort_by == "relevance":
+        normalized = sorted(normalized, key=lambda r: (not bool(r.cuisines), r.distance_m))
+    normalized = normalized[:100]
     return normalized
 
 
 def unavailable_filters(request: RestaurantSearchRequest) -> list[str]:
     unavailable = []
+    # OSM coverage is incomplete: matching tags can be used, but absence cannot
+    # prove that a restaurant does not offer the requested cuisine/diet.
+    if request.cuisines:
+        unavailable.append("cuisines")
     if request.max_price_eur is not None:
         unavailable.append("max_price_eur")
     if request.max_wait_minutes is not None:
@@ -218,4 +250,6 @@ def unavailable_filters(request: RestaurantSearchRequest) -> list[str]:
         unavailable.append("dietary")
     if request.allergies:
         unavailable.append("allergies")
+    if request.sort_by == "rating":
+        unavailable.append("rating")
     return unavailable

@@ -1,0 +1,2 @@
+"use client";
+export default function BudgetSlider({ value, min, max, step, onChange, labelledBy }: { value: number; min: number; max: number; step: number; onChange: (value: number) => void; labelledBy: string }) { return <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-labelledby={labelledBy} className="budget-range w-full accent-primary" />; }

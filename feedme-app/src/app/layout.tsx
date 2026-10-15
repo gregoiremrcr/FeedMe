@@ -19,10 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${garamond.variable} ${manrope.variable}`}>
       <body className="min-h-screen font-body">
         <AuthProvider>
-          <Suspense fallback={<header className="h-20" />}>
+          <Suspense fallback={<header className="h-16 md:h-20" />}>
             <Header />
           </Suspense>
-          <main className="w-full pt-20">{children}</main>
+          <main className="w-full pt-16 md:pt-20">{children}</main>
           <Footer />
         </AuthProvider>
       </body>

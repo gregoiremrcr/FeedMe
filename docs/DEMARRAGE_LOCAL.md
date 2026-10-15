@@ -1,5 +1,12 @@
 # Démarrer FeedMe en local
 
+La recherche de restaurants utilise par défaut l’instance Overpass PikaMap :
+https://api-overpass.pikamap.fr/api/interpreter
+
+L’URL reste configurable avec OVERPASS_URL. Les réponses Overpass sont mises en
+cache en mémoire pendant une minute et le délai est configurable avec
+OVERPASS_TIMEOUT_SECONDS.
+
 Ce guide explique comment lancer MongoDB, le backend FastAPI, le frontend Next.js et leurs tests, séparément ou avec Docker Compose.
 
 Les commandes PowerShell partent du dossier racine du dépôt contenant `docker-compose.yml`, `backend/` et `feedme-app/` (dans cette copie : `C:\IIM\bootcamp\FeedMe\FeedMe`).

@@ -36,7 +36,7 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       - name: Run pytest
-        run: python -m pytest
+        run: python -m pytest --cov=app --cov-report=term-missing
 
       - name: Run Ruff
         run: ruff check app tests
@@ -80,6 +80,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check Docker Compose configuration
+        env:
+          OVERPASS_TIMEOUT_SECONDS: '45'
+        run: |
+          docker compose config --quiet
+          test "$(docker compose config --format json | jq -r '.services.backend.environment.OVERPASS_TIMEOUT_SECONDS')" = '45'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

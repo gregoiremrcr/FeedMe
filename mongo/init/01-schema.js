@@ -27,10 +27,18 @@ ensureCollection("users", {
       email: { bsonType: "string", minLength: 3, maxLength: 254 },
       password_hash: { bsonType: "string", minLength: 20 },
       display_name: { bsonType: "string", maxLength: 100 },
+      language: { bsonType: "string", minLength: 2, maxLength: 10 },
       created_at: { bsonType: "date" },
       updated_at: { bsonType: "date" },
       last_login_at: { bsonType: ["date", "null"] },
       is_active: { bsonType: "bool" },
+      preferences: {
+        bsonType: "object",
+        properties: {
+          radius_m: { bsonType: "int", minimum: 100, maximum: 10000 },
+          language: { bsonType: "string", minLength: 2, maxLength: 10 },
+        },
+      },
     },
   },
 });

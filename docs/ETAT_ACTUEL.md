@@ -43,6 +43,8 @@ Les variables documentees dans `.env.example` sont :
 MONGO_URL=mongodb://localhost:27018
 MONGO_DATABASE=feedme
 JWT_SECRET=replace-with-a-random-secret-at-least-32-characters
+OVERPASS_URL=https://overpass-api.de/api/interpreter
+OVERPASS_TIMEOUT_SECONDS=30
 BACKEND_PORT=8000
 FRONTEND_PORT=3000
 ```

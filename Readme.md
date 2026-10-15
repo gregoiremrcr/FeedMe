@@ -25,7 +25,7 @@
 | Domaine | Technologie envisagée |
 |---|---|
 | Frontend | React / Next.js, CSS |
-| Backend | Python, Next.js |
+| Backend | Python, FastAPI |
 | Base de données | MongoDB |
 | Intelligence artificielle | Claude |
 | Images applicatives | Docker / GHCR |
@@ -40,13 +40,16 @@ Navigateur / mobile
 Frontend React / Next.js
 	│  API REST (JSON)
 	▼
-Backend Python ─────── Fournisseur IA (Claude)
-	│
+Backend FastAPI ────── Claude
+	│  ├─────────────── OpenStreetMap / Overpass
+	│  ├─────────────── Géocodage d’adresse OSM
 	▼
-     MongoDB
+MongoDB (comptes et préférences)
 ```
 
-Le frontend communique avec le backend via une API REST versionnée et documentée. Le backend centralise la validation des données, l’authentification, la logique métier et les appels à l’IA. Les secrets et clés d’API ne doivent jamais être exposés dans le frontend ni ajoutés au dépôt.
+Le frontend communique avec FastAPI via une API REST versionnée. FastAPI centralise l’authentification, les préférences de rayon, les recherches Overpass et l’orchestration de Claude. OpenStreetMap fournit les restaurants et leurs coordonnées ; Claude comprend les demandes et formule ses recommandations à partir des résultats OSM. Les prix, menus, avis et temps d’attente ne sont affichés que lorsqu’une source les fournit ; ils ne sont jamais déduits ou inventés. Les secrets et clés d’API ne doivent jamais être exposés dans le frontend ni ajoutés au dépôt.
+
+La recherche de restaurants est exposée sous `POST /api/v1/restaurants/search`, les préférences de compte (rayon et langue de réponse) sous `GET/PATCH /api/v1/users/me/preferences`, et le chatbot sous `POST /api/v1/assistant/messages`. L’assistant exige `ANTHROPIC_API_KEY` et `CLAUDE_MODEL`; la recherche Web Anthropic est facultative (`ANTHROPIC_WEB_SEARCH_ENABLED=true`). La carte et la recherche OSM n’exigent pas de clé Claude. Une adresse saisie dans le chat prévaut sur la position géolocalisée pour cette recherche. Le rayon par défaut est de 1 000 m et se règle dans le profil.
 
 ## Sécurité et qualité
 
@@ -67,6 +70,8 @@ Les objectifs de sécurité et de livraison comprennent :
 
 La stack locale peut être démarrée avec Docker Compose depuis le dossier `FeedMe/` :
 
+Le guide détaillé pour lancer chaque service séparément et exécuter les tests se trouve dans [`docs/DEMARRAGE_LOCAL.md`](docs/DEMARRAGE_LOCAL.md).
+
 ```bash
 docker compose up --build
 ```
@@ -77,7 +82,7 @@ Les services sont ensuite disponibles aux adresses suivantes :
 - backend et documentation OpenAPI : http://localhost:8000/docs
 - contrôle de santé backend : http://localhost:8000/health
 
-Copiez `.env.example` vers `.env` uniquement si vous devez modifier les ports ou le nom de la base. Aucun secret n'est nécessaire pour cette fondation. Ne renseignez jamais de vraies clés ou de secrets dans ce fichier ni dans le dépôt.
+Copiez `.env.example` vers `.env` pour configurer l’environnement local. `NEXT_PUBLIC_API_URL` est injectée à la compilation du frontend et doit donc être définie avant `docker compose up --build`. En production, définissez `APP_ENV=production`, `FRONTEND_ORIGIN` sur l’origine HTTPS exacte et fournissez un `JWT_SECRET` aléatoire ; le cookie de session aura alors l’attribut `Secure`. Ne renseignez jamais de vrais secrets dans le dépôt.
 
 ### Prérequis
 
@@ -91,6 +96,8 @@ Copiez `.env.example` vers `.env` uniquement si vous devez modifier les ports ou
 | `frontend` | Application Next.js | http://localhost:3000 |
 | `backend` | API FastAPI | http://localhost:8000 |
 | `mongo` | Base MongoDB locale | réseau Docker uniquement |
+
+Le backend attend jusqu'a 30 secondes pour une réponse Overpass. Configure ce délai avec `OVERPASS_TIMEOUT_SECONDS` dans `.env` (maximum : 60 secondes).
 
 MongoDB est conservée dans le volume Docker `mongo_data`. Les healthchecks démarrent les services dans l'ordre : MongoDB, backend, puis frontend.
 
@@ -130,6 +137,8 @@ python -m pytest
 ruff check app tests
 ```
 
+Pour lancer Next.js et FastAPI sans Compose, définissez `NEXT_PUBLIC_API_URL=http://localhost:8000` dans `feedme-app/.env.local` avant `npm run dev`. Démarrez MongoDB et le backend avec `APP_ENV=development` et `FRONTEND_ORIGIN=http://localhost:3000`.
+
 ## API
 
 Le backend expose actuellement les routes d’authentification suivantes :
@@ -142,7 +151,14 @@ POST /api/v1/auth/logout
 ```
 
 Les mots de passe sont hashés avec Argon2 et le JWT est stocké dans un cookie
-HttpOnly. Les routes et schémas détaillés sont disponibles dans OpenAPI sur
+HttpOnly avec `SameSite=Lax`. Les mutations d’authentification exigent l’en-tête
+`Origin` correspondant exactement à `FRONTEND_ORIGIN`. L’API applique une limite
+locale de 5 inscriptions et 10 connexions par minute et adresse IP ; cette
+limitation en mémoire est adaptée au lancement local et ne remplace pas un
+limiteur partagé derrière plusieurs instances. Avec `SameSite=Lax`, le frontend et
+le backend en production doivent être servis sous le même site (par exemple deux
+sous-domaines de `example.com`). `FRONTEND_ORIGIN` ne doit contenir qu’une origine,
+sans chemin. Les routes et schémas détaillés sont disponibles dans OpenAPI sur
 http://localhost:8000/docs.
 
 ## CI/CD et GHCR

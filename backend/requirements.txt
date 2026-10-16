@@ -9,6 +9,6 @@ PyJWT
 pwdlib[argon2]
 
 httpx
-google-genai
+google-genai>=2.3.0
 
 slowapi

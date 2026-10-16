@@ -1,3 +1,5 @@
+import json
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -13,16 +15,12 @@ from app.schemas.restaurants import (
     AssistantMessageResponse,
     Location,
     RestaurantSearchRequest,
+    RestaurantSearchToolArguments,
 )
 from app.services.osm import geocode_address, search_osm
 
 router = APIRouter()
-
-try:
-    from google.genai.errors import APIError as GeminiAPIError
-except ImportError:  # Allows configuration and route tests without optional runtime packages installed.
-    class GeminiAPIError(Exception):
-        pass
+logger = logging.getLogger(__name__)
 
 _SEARCH_FUNCTION = {
     "name": "search_nearby_restaurants",
@@ -38,6 +36,7 @@ _SEARCH_FUNCTION = {
         "max_wait_minutes": {"type": "integer", "minimum": 0, "maximum": 600},
     }},
 }
+_SEARCH_TOOL = {"type": "function", **_SEARCH_FUNCTION}
 
 
 class _GeminiClient:
@@ -45,6 +44,10 @@ class _GeminiClient:
         self.aio = client.aio
 
     async def generate(self, **kwargs: Any) -> Any:
+        interactions = getattr(self.aio, "interactions", None)
+        if interactions is not None:
+            return await interactions.create(**kwargs)
+        # Kept only for existing unit-test doubles while migrating the provider.
         return await self.aio.models.generate_content(**kwargs)
 
     async def close(self) -> None:
@@ -80,27 +83,71 @@ def _assistant_system(language: str) -> str:
 
 
 def _response_text(response: Any) -> str:
-    text = getattr(response, "text", None)
+    text = getattr(response, "output_text", None) or getattr(response, "text", None)
     return text.strip() if isinstance(text, str) else ""
 
 
 def _function_calls(response: Any) -> list[Any]:
+    steps = getattr(response, "steps", None)
+    if steps is not None:
+        return [step for step in steps if getattr(step, "type", None) == "function_call"]
     calls = getattr(response, "function_calls", None)
     if calls is not None:
         return list(calls)
-    candidates = getattr(getattr(response, "candidates", [None])[0], "content", None)
+    candidates_list = getattr(response, "candidates", None) or []
+    candidates = getattr(candidates_list[0], "content", None) if candidates_list else None
     parts = getattr(candidates, "parts", []) if candidates else []
     return [part.function_call for part in parts if getattr(part, "function_call", None)]
 
 
 def _call_args(call: Any) -> dict[str, Any]:
-    args = getattr(call, "args", None)
+    args = getattr(call, "arguments", None) or getattr(call, "args", None)
     return args if isinstance(args, dict) else {}
 
 
-def _function_response_contents(calls: list[Any], outputs: list[dict[str, Any]]) -> list[Any]:
-    return [{"function_response": {"name": getattr(call, "name", _SEARCH_FUNCTION["name"]), "response": output}}
-            for call, output in zip(calls, outputs, strict=True)]
+def _safe_answer(response: Any) -> str:
+    answer = _response_text(response)
+    if not answer:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail="L’assistant est temporairement indisponible. Réessaie plus tard.")
+    return answer
+
+
+def _interaction_input(payload: AssistantMessageRequest) -> list[dict[str, Any]]:
+    history: list[dict[str, Any]] = []
+    for turn in payload.history:
+        history.append({
+            "type": "user_input" if turn.role == "user" else "model_output",
+            "content": [{"type": "text", "text": turn.content}],
+        })
+    history.append({
+        "type": "user_input",
+        "content": [{"type": "text", "text": payload.message}],
+    })
+    return history
+
+
+def _function_results(calls: list[Any], outputs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "type": "function_result",
+            "name": getattr(call, "name", _SEARCH_FUNCTION["name"]),
+            "call_id": getattr(call, "id", None) or getattr(call, "call_id", "feedme-call"),
+            "result": [{"type": "text", "text": json.dumps(output, ensure_ascii=False)}],
+        }
+        for call, output in zip(calls, outputs, strict=True)
+    ]
+
+
+def _model_steps(response: Any) -> list[dict[str, Any]]:
+    steps = getattr(response, "steps", None) or []
+    serialized: list[dict[str, Any]] = []
+    for step in steps:
+        if hasattr(step, "model_dump"):
+            serialized.append(step.model_dump(exclude_none=True))
+        elif isinstance(step, dict):
+            serialized.append(step)
+    return serialized
 
 
 @router.post("/assistant/messages", response_model=AssistantMessageResponse)
@@ -112,11 +159,7 @@ async def assistant_message(
     database: AsyncIOMotorDatabase = Depends(get_database),  # noqa: B008
 ) -> AssistantMessageResponse:
     settings = get_settings()
-    contents: list[Any] = [
-        {"role": "model" if turn.role == "assistant" else "user", "parts": [{"text": turn.content}]}
-        for turn in payload.history
-    ]
-    contents.append({"role": "user", "parts": [{"text": payload.message}]})
+    interaction_history = _interaction_input(payload)
     if user is None:
         language, radius_default = "fr", 1000
     else:
@@ -126,30 +169,35 @@ async def assistant_message(
         language = str(preferences.get("language", account.get("language", "fr")))
         radius_default = int(preferences.get("radius_m", 1000))
 
-    client = _client()
-    config = {"system_instruction": _assistant_system(language),
-              "tools": [{"function_declarations": [_SEARCH_FUNCTION]}],
-              "max_output_tokens": settings.gemini_max_output_tokens}
+    client: _GeminiClient | None = None
     try:
-        response = await client.generate(model=settings.gemini_model, contents=contents, config=config)
+        client = _client()
+        response = await client.generate(
+            model=settings.gemini_model,
+            input=interaction_history,
+            tools=[_SEARCH_TOOL],
+            system_instruction=_assistant_system(language),
+            generation_config={"max_output_tokens": settings.gemini_max_output_tokens},
+            store=False,
+        )
         calls = [call for call in _function_calls(response)
                  if getattr(call, "name", _SEARCH_FUNCTION["name"]) == _SEARCH_FUNCTION["name"]]
         if not calls:
-            return AssistantMessageResponse(answer=_response_text(response),
+            return AssistantMessageResponse(answer=_safe_answer(response),
                                             needs_location=payload.lat is None and payload.lon is None)
 
         restaurants = []
         resolved_location: Location | None = None
         outputs: list[dict[str, Any]] = []
         for call in calls:
-            tool_input = _call_args(call)
             try:
+                tool_input = RestaurantSearchToolArguments.model_validate(_call_args(call))
                 search_request = RestaurantSearchRequest(
-                    address=tool_input.get("address"), lat=payload.lat, lon=payload.lon,
-                    radius_m=tool_input.get("radius_m"), cuisines=tool_input.get("cuisines", []),
-                    dietary=tool_input.get("dietary", []), allergies=tool_input.get("allergies", []),
-                    dish_type=tool_input.get("dish_type"), max_price_eur=tool_input.get("max_price_eur"),
-                    max_wait_minutes=tool_input.get("max_wait_minutes"),
+                    address=tool_input.address, lat=payload.lat, lon=payload.lon,
+                    radius_m=tool_input.radius_m, cuisines=tool_input.cuisines,
+                    dietary=tool_input.dietary, allergies=tool_input.allergies,
+                    dish_type=tool_input.dish_type, max_price_eur=tool_input.max_price_eur,
+                    max_wait_minutes=tool_input.max_wait_minutes,
                 )
             except ValidationError:
                 outputs.append({"error": "Une adresse ou position est nécessaire avant la recherche."})
@@ -166,22 +214,28 @@ async def assistant_message(
             outputs.append({"radius_m": radius, "results": [item.model_dump() for item in restaurants],
                             "warning": "Les informations absentes d’OpenStreetMap sont indisponibles."})
 
-        model_parts = [{"function_call": {"name": getattr(call, "name", _SEARCH_FUNCTION["name"]),
-                                           "args": _call_args(call)}} for call in calls]
-        final_contents = contents + [{"role": "model", "parts": model_parts},
-                                     {"role": "user", "parts": _function_response_contents(calls, outputs)}]
-        final = await client.generate(model=settings.gemini_model, contents=final_contents,
-                                      config={"system_instruction": _assistant_system(language),
-                                              "max_output_tokens": settings.gemini_max_output_tokens})
+        final_input = interaction_history + _model_steps(response) + _function_results(calls, outputs)
+        final = await client.generate(
+            model=settings.gemini_model,
+            input=final_input,
+            tools=[_SEARCH_TOOL],
+            system_instruction=_assistant_system(language),
+            generation_config={"max_output_tokens": settings.gemini_max_output_tokens},
+            store=False,
+        )
     except HTTPException:
         raise
-    except (GeminiAPIError, TimeoutError, ConnectionError):
+    except Exception:  # noqa: BLE001 - the SDK exposes version-dependent provider errors.
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
                             detail="L’assistant est temporairement indisponible. Réessaie plus tard.") from None
     finally:
-        await client.close()
+        if client is not None:
+            try:
+                await client.close()
+            except Exception:
+                logger.debug("Gemini client close failed", exc_info=True)
 
     sources = {source["url"]: source for restaurant in restaurants for source in restaurant.sources}
-    return AssistantMessageResponse(answer=_response_text(final), results=restaurants,
+    return AssistantMessageResponse(answer=_safe_answer(final), results=restaurants,
                                     needs_location=resolved_location is None and payload.lat is None,
                                     location=resolved_location, sources=list(sources.values()))

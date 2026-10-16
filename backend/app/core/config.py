@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     nominatim_url: str = "https://nominatim.openstreetmap.org/search"
     osm_user_agent: str = "FeedMe/1.0 (restaurant discovery; configure OSM_USER_AGENT)"
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
     gemini_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
     gemini_max_output_tokens: int = Field(default=800, ge=128, le=4000)
     gemini_web_search_enabled: bool = False

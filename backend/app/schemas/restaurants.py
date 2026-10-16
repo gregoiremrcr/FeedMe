@@ -1,7 +1,7 @@
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Radius = Literal[500, 1000, 2000, 5000]
 Cuisine = Literal["french", "italian", "japanese", "indian", "fast_food", "cafe", "other"]
@@ -115,3 +115,16 @@ class AssistantMessageResponse(BaseModel):
     needs_location: bool = False
     location: Location | None = None
     sources: list[dict[str, str]] = Field(default_factory=list)
+
+
+class RestaurantSearchToolArguments(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    address: str | None = Field(default=None, min_length=3, max_length=300)
+    radius_m: Radius | None = None
+    cuisines: list[Cuisine] = Field(default_factory=list, max_length=10)
+    dietary: list[Dietary] = Field(default_factory=list, max_length=10)
+    allergies: list[Allergy] = Field(default_factory=list, max_length=10)
+    dish_type: MealType | None = None
+    max_price_eur: float | None = Field(default=None, gt=0, le=1000)
+    max_wait_minutes: int | None = Field(default=None, ge=0, le=600)

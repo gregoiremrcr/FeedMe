@@ -10,10 +10,10 @@ Les cases de cette checklist sont toutes ouvertes au départ. Elles ne doivent �
 - Authentification : FastAPI expose `register`, `login`, `me` et `logout`, utilise MongoDB, Argon2 et un JWT en cookie HttpOnly. Le frontend appelle désormais toujours ces routes ; le mode simulé/localStorage a été retiré. Une URL API absente ou invalide produit une erreur explicite.
 - Session et sécurité : le cookie est HttpOnly et utilise `SameSite=None` pour permettre l’authentification entre les domaines temporaires Cloud Run, avec `Secure` activé en production. Les mutations d’authentification exigent l’origine exacte configurée dans `FRONTEND_ORIGIN`. Pour une production avec des sous-domaines personnalisés `app` et `api` du même domaine, réévaluer `SameSite` et privilégier la configuration la plus restrictive compatible. Les routes inscription/connexion ont des limites SlowAPI locales en mémoire. Les tests du backend et le parcours navigateur réel restent à exécuter dans un environnement avec Python/Docker disponible.
 - Recherche : FastAPI expose maintenant `POST /api/v1/restaurants/search` et interroge Overpass côté serveur ; le géocodage d’adresse passe par Nominatim. Le frontend carte consomme FastAPI, demande la géolocalisation après action de l’utilisateur, accepte une adresse et n’ajoute plus de résultats fictifs. Les préférences de compte incluent un rayon par défaut de 1 000 m et la langue de réponse de l’assistant, modifiables depuis le profil.
-- Assistant : le frontend envoie les messages à `POST /api/v1/assistant/messages`. Claude peut appeler un outil backend qui cherche des candidats OSM ; les résultats structurés sont renvoyés séparément du texte. L’assistant nécessite `ANTHROPIC_API_KEY` et `CLAUDE_MODEL`. L’historique des échanges reste côté client et n’est pas conservé en base.
-- Données : OpenStreetMap fournit les coordonnées, noms et étiquettes disponibles. La recherche Web Anthropic est optionnelle et désactivée par défaut (`ANTHROPIC_WEB_SEARCH_ENABLED=false`) ; quand elle est activée, les citations reçues sont affichées. Prix, menus, avis et attentes restent absents si aucune donnée vérifiable n’est fournie.
+- Assistant : le frontend envoie les messages à `POST /api/v1/assistant/messages`. Gemini peut appeler un outil backend qui cherche des candidats OSM ; les résultats structurés sont renvoyés séparément du texte. L’assistant nécessite `GEMINI_API_KEY` et `GEMINI_MODEL`. L’historique des échanges reste côté client et n’est pas conservé en base.
+- Données : OpenStreetMap fournit les coordonnées, noms et étiquettes disponibles. La recherche Web Gemini est désactivée par défaut (`GEMINI_WEB_SEARCH_ENABLED=false`) et ne sert jamais de source de restaurants. Prix, menus, avis et attentes restent absents si aucune donnée vérifiable n’est fournie.
 - Backend et données : le backend possède une configuration, le cycle de vie de MongoDB et des routes d’authentification. Le script `mongo/init/01-schema.js` initialise les collections et index sur un volume neuf.
-- Tests et livraison (après l’intégration restaurants) : 18 tests frontend, lint, build et `docker compose config --quiet` passent. Pour Compose, il a fallu utiliser le dossier `.docker-config` du dépôt car la configuration Docker utilisateur est inaccessible. Les tests backend ne sont pas exécutés car le lanceur Python 3.13 échoue avec « Accès refusé » et le moteur Docker ne peut pas ouvrir son canal local. Les appels réels à Anthropic, Nominatim et Overpass ainsi que le parcours navigateur n’ont pas été vérifiés.
+- Tests et livraison : les tests et contrôles doivent être exécutés avec les commandes documentées ; les appels réels à Gemini, Nominatim et Overpass ne font pas partie des tests automatisés.
 - Documentation : `Readme.md`, `docs/GUIDE_IMPLEMENTATION.md` et `docs/PLAN_TACHES.md` décrivent aussi des étapes futures. En cas de divergence, vérifier le code et actualiser les documents concernés.
 
 ## 0. Décisions produit et techniques à prendre
@@ -78,7 +78,7 @@ Les cases de cette checklist sont toutes ouvertes au départ. Elles ne doivent �
 - [x] Connecter l’envoi des messages au backend et afficher séparément les réponses et restaurants structurés.
 - [x] Connecter la recherche directe de la carte à FastAPI.
 - [x] Désactiver les contrôles pendant les envois et afficher les erreurs réseau.
-- [x] Garder les clés Claude et OSM côté backend et vérifier qu’elles ne sont pas utilisées dans le bundle frontend.
+- [x] Garder la clé Gemini et les accès OSM côté backend et vérifier qu’ils ne sont pas utilisés dans le bundle frontend.
 
 ### 2.4 Vérifications frontend
 
@@ -152,15 +152,15 @@ Les cases de cette checklist sont toutes ouvertes au départ. Elles ne doivent �
 - [ ] Implémenter `POST /api/v1/conversations/{id}/messages` avec validation de message, taille maximale et contrôle de propriété.
 - [ ] Définir l’association et la persistance entre utilisateur, conversation, messages et recherches.
 - [ ] Ajouter pagination et tri de l’historique si nécessaire.
-- [x] Créer un client Claude côté serveur, configuré par environnement, avec timeout et erreurs contrôlées.
+- [x] Créer un client Gemini côté serveur, configuré par environnement, avec timeout et erreurs contrôlées.
 - [x] Définir l’outil structuré de recherche restaurant et valider ses arguments avec Pydantic.
-- [x] Orchestrer Claude → recherche OSM → réponse Claude à partir des candidats réels.
-- [x] Séparer les consignes système des messages et données fournisseur ; rappeler à Claude que ces derniers ne sont pas des instructions.
+- [x] Orchestrer Gemini → recherche OSM → réponse Gemini à partir des candidats réels.
+- [x] Séparer les consignes système des messages et données fournisseur ; rappeler à Gemini que ces derniers ne sont pas des instructions.
 - [x] Contraindre la réponse aux restaurants retournés par OSM et interdire les informations non vérifiées.
 - [x] Gérer la localisation manquante, les résultats vides et les indisponibilités fournisseur avec des réponses contrôlées.
-- [ ] Définir politique de nouvelle tentative et limites de coût/longueur pour les appels Claude.
+- [x] Définir des limites de longueur et de sortie pour les appels Gemini.
 - [ ] Enregistrer les messages et recherches de façon cohérente, en évitant les conversations partiellement corrompues en cas d’échec.
-- [ ] Tester sorties JSON valides/invalides, erreurs/timeouts Claude, absence/résultats trouvés et tentatives d’accès à la conversation d’un autre utilisateur.
+- [x] Tester les function calls valides/invalides, erreurs/timeouts Gemini, absence/résultats trouvés et sorties vides.
 
 ### 3.6 Contrat API et observabilité
 
@@ -250,7 +250,7 @@ Les cases de cette checklist sont toutes ouvertes au départ. Elles ne doivent �
 4. Construire les écrans et composants frontend FeedMe, d’abord avec des données contrôlées.
 5. Terminer et vérifier l’authentification réelle, les cookies de session et la protection contre les tentatives répétées.
 6. Intégrer l’API réelle de restaurants et le parcours de recherche.
-7. Ajouter persistance des conversations et orchestration Claude.
+7. Ajouter persistance des conversations et orchestration Gemini.
 8. Compléter sécurité, tests, documentation et CI.
 9. Déployer selon l’architecture approuvée et préparer la démonstration.
 
@@ -264,7 +264,7 @@ Les cases de cette checklist sont toutes ouvertes au départ. Elles ne doivent �
 ## Limites fonctionnelles à ne pas présenter comme livrées
 
 - Réinitialisation du mot de passe : aucune route, aucun jeton à durée limitée et aucun parcours d’e-mail ne sont implémentés. La récupération de compte reste à développer.
-- Anthropic et Claude : l’appel backend existe, mais il dépend de ANTHROPIC_API_KEY et CLAUDE_MODEL, n’est pas disponible sans configuration valide et doit encore être vérifié avec les vrais identifiants, quotas et coûts du compte Anthropic.
-- Langue : la préférence est enregistrée et transmise comme consigne à Claude ; elle ne localise pas l’interface et son effet doit encore être couvert par un test d’intégration avec Claude.
+- Gemini : l’appel backend existe, dépend de GEMINI_API_KEY et GEMINI_MODEL, et n’est pas disponible sans configuration valide. La clé reste uniquement dans l’environnement backend.
+- Langue : la préférence est enregistrée et transmise comme consigne à Gemini ; elle ne localise pas l’interface.
 - Solde midi : le montant affiché dans le frontend est une valeur statique de démonstration. Il n’est relié à aucun compte, fournisseur de paiement ou système de restauration et ne doit pas être présenté comme un solde réel.
-- Chatbot : le frontend appelle bien la route backend, mais l’historique n’est pas persisté, les conversations ne disposent pas encore de routes dédiées et l’intégration réelle avec Anthropic reste à valider en environnement configuré. Ce n’est pas encore une fonctionnalité métier complète.
+- Chatbot : le frontend appelle bien la route backend, mais l’historique n’est pas persisté et les conversations ne disposent pas encore de routes dédiées.

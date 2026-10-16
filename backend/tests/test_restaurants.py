@@ -316,6 +316,136 @@ def test_assistant_calls_osm_tool_and_returns_structured_candidates(monkeypatch:
     assert response.json()["results"][0]["name"] == "Trattoria"
 
 
+def test_assistant_returns_503_without_gemini_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(assistant, "get_settings", lambda: Settings(_env_file=None, gemini_api_key=None))
+    with TestClient(app) as client:
+        response = client.post("/api/v1/assistant/messages", json={"message": "Je veux manger"})
+    assert response.status_code == 503
+    assert "GEMINI_API_KEY" in response.json()["detail"]
+
+
+def test_assistant_rejects_invalid_tool_arguments_without_search(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Call:
+        name = "search_nearby_restaurants"
+        args: ClassVar[dict[str, Any]] = {"cuisines": ["not-a-cuisine"], "unexpected": "value"}
+
+    class Response:
+        function_calls: ClassVar[list[Call]] = [Call()]
+
+    class Final:
+        text = "Je ne peux pas utiliser ces critères invalides."
+
+    class Models:
+        calls = 0
+
+        async def generate_content(self, **kwargs: Any) -> Any:
+            self.calls += 1
+            return Response() if self.calls == 1 else Final()
+
+    class FakeGemini:
+        aio = type("AsyncClient", (), {"models": Models()})()
+
+    monkeypatch.setattr(assistant, "_client", lambda: assistant._GeminiClient(FakeGemini()))
+    search = AsyncMock()
+    monkeypatch.setattr(assistant, "search_osm", search)
+    with TestClient(app) as client:
+        response = client.post("/api/v1/assistant/messages", json={"message": "Cherche"})
+    assert response.status_code == 200
+    assert response.json()["results"] == []
+    search.assert_not_awaited()
+
+
+def test_assistant_address_takes_priority_over_coordinates(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Call:
+        name = "search_nearby_restaurants"
+        args: ClassVar[dict[str, Any]] = {"address": "10 rue de Paris", "radius_m": 500}
+
+    class First:
+        function_calls: ClassVar[list[Call]] = [Call()]
+
+    class Final:
+        text = "Résultat à l’adresse demandée."
+
+    class Models:
+        calls = 0
+
+        async def generate_content(self, **kwargs: Any) -> Any:
+            self.calls += 1
+            return First() if self.calls == 1 else Final()
+
+    class FakeGemini:
+        aio = type("AsyncClient", (), {"models": Models()})()
+
+    location = Location(lat=48.86, lon=2.34, source="address")
+    monkeypatch.setattr(assistant, "_client", lambda: assistant._GeminiClient(FakeGemini()))
+    monkeypatch.setattr(assistant, "geocode_address", AsyncMock(return_value=location))
+    monkeypatch.setattr(assistant, "search_osm", AsyncMock(return_value=[]))
+    with TestClient(app) as client:
+        response = client.post("/api/v1/assistant/messages", json={"message": "Cherche ici", "lat": 1, "lon": 1})
+    assert response.status_code == 200
+    assert response.json()["location"]["source"] == "address"
+
+
+def test_assistant_empty_gemini_response_is_502(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Empty:
+        text = "   "
+
+    class Models:
+        async def generate_content(self, **kwargs: Any) -> Any:
+            return Empty()
+
+    class FakeGemini:
+        aio = type("AsyncClient", (), {"models": Models()})()
+
+    monkeypatch.setattr(assistant, "_client", lambda: assistant._GeminiClient(FakeGemini()))
+    with TestClient(app) as client:
+        response = client.post("/api/v1/assistant/messages", json={"message": "Bonjour"})
+    assert response.status_code == 502
+
+
+def test_assistant_gemini_timeout_is_502(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Models:
+        async def generate_content(self, **kwargs: Any) -> Any:
+            raise TimeoutError("simulated timeout")
+
+    class FakeGemini:
+        aio = type("AsyncClient", (), {"models": Models()})()
+
+    monkeypatch.setattr(assistant, "_client", lambda: assistant._GeminiClient(FakeGemini()))
+    with TestClient(app) as client:
+        response = client.post("/api/v1/assistant/messages", json={"message": "Bonjour"})
+    assert response.status_code == 502
+
+
+def test_assistant_without_location_returns_controlled_response(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Call:
+        name = "search_nearby_restaurants"
+        args: ClassVar[dict[str, Any]] = {"cuisines": ["italian"]}
+
+    class First:
+        function_calls: ClassVar[list[Call]] = [Call()]
+
+    class Final:
+        text = "Indique-moi une adresse ou autorise la géolocalisation."
+
+    class Models:
+        calls = 0
+
+        async def generate_content(self, **kwargs: Any) -> Any:
+            self.calls += 1
+            return First() if self.calls == 1 else Final()
+
+    class FakeGemini:
+        aio = type("AsyncClient", (), {"models": Models()})()
+
+    monkeypatch.setattr(assistant, "_client", lambda: assistant._GeminiClient(FakeGemini()))
+    with TestClient(app) as client:
+        response = client.post("/api/v1/assistant/messages", json={"message": "Un italien"})
+    assert response.status_code == 200
+    assert response.json()["needs_location"] is True
+    assert response.json()["results"] == []
+
+
 def test_overpass_provider_error_is_controlled(monkeypatch: pytest.MonkeyPatch) -> None:
     class Client:
         async def __aenter__(self) -> Self:

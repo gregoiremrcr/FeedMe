@@ -28,7 +28,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-32-bytes-minimum}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-30}
       GEMINI_MAX_OUTPUT_TOKENS: ${GEMINI_MAX_OUTPUT_TOKENS:-800}
       GEMINI_WEB_SEARCH_ENABLED: ${GEMINI_WEB_SEARCH_ENABLED:-false}

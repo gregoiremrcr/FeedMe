@@ -6,7 +6,7 @@ Ce document transforme la documentation du projet en feuille de route opération
 
 - Le dépôt contient un squelette Next.js dans `feedme-app/`.
 - Le backend FastAPI est présent dans `backend/` avec configuration MongoDB et routes JWT.
-- MongoDB, Docker Compose, l'authentification, les tests frontend et la CI sont partiellement implémentés ; l'API restaurants backend, Claude et AWS restent à réaliser.
+- MongoDB, Docker Compose, l'authentification, l'API restaurants, Gemini, les tests frontend et la CI sont implémentés ; AWS reste à réaliser.
 - Le fournisseur de restaurants retenu est OpenStreetMap/Overpass, via l’instance PikaMap configurable avec OVERPASS_URL.
 - Aucun secret réel ne doit être ajouté au dépôt.
 
@@ -16,7 +16,7 @@ Ce document transforme la documentation du projet en feuille de route opération
 2. Construire les fondations locales.
 3. Ajouter les comptes et la sécurité.
 4. Intégrer la recherche de restaurants.
-5. Ajouter les conversations et Claude.
+5. Ajouter les conversations et Gemini.
 6. Ajouter les tests, la documentation et les contrôles de sécurité.
 7. Mettre en place la CI/CD et le déploiement AWS.
 8. Préparer puis répéter la démonstration.
@@ -35,7 +35,7 @@ Décider et noter les versions de Next.js, Node.js, Python, FastAPI, MongoDB, de
 
 Documenter les coûts, quotas, couverture, données disponibles, conditions d'utilisation et attribution d’OpenStreetMap/Overpass avant la mise en production.
 
-**Décision importante :** Claude ne fournit jamais la vérité sur les restaurants. Il peut extraire des critères et rédiger une réponse, mais les établissements viennent toujours de l'API choisie.
+**Décision importante :** Gemini ne fournit jamais la vérité sur les restaurants. Il peut extraire des critères et rédiger une réponse, mais les établissements viennent toujours d’OpenStreetMap via le backend.
 
 ### 3.3 Géolocalisation et données
 
@@ -73,7 +73,7 @@ Créer un monolithe modulaire avec `backend/app/main.py`, puis les modules `core
 
 Créer `GET /health` avec une réponse stable et documentée. Ajouter un test qui vérifie le code HTTP et le contenu utile de la réponse.
 
-**Validation :** l'API répond sans dépendre de Claude ou de l'API restaurants.
+**Validation :** l'API répond sans dépendre de Gemini ou de l’API restaurants.
 
 ### T5 — MongoDB et environnement local
 
@@ -143,7 +143,7 @@ Créer la saisie des critères, les cartes de résultats, le détail, les états
 
 **Validation de fin de phase :** les établissements affichés proviennent bien de l'API choisie, jamais d'une invention du modèle IA.
 
-## 7. Phase 4 — Conversations et chatbot Claude
+## 7. Phase 4 — Conversations et chatbot Gemini
 
 ### T18 — Modèles de données
 
@@ -160,9 +160,9 @@ Implémenter :
 
 Vérifier systématiquement que l'utilisateur a le droit d'accéder à la conversation.
 
-### T20 — Client Claude côté serveur
+### T20 — Client Gemini côté serveur
 
-Créer un client configurable par environnement, avec timeout, gestion d'erreur et nouvelle tentative contrôlée. Aucun appel Claude ne doit partir du navigateur et aucune clé ne doit être envoyée au frontend.
+Créer un client `google-genai` configurable par environnement, avec timeout et gestion d'erreur. Aucun appel Gemini ne doit partir du navigateur et aucune clé ne doit être envoyée au frontend.
 
 ### T21 — Extraction structurée
 
@@ -173,20 +173,20 @@ Concevoir un prompt qui demande uniquement les critères de recherche dans un JS
 Respecter exactement ce flux :
 
 1. valider le message utilisateur ;
-2. extraire les critères avec Claude ;
+2. extraire les critères avec Gemini via function calling ;
 3. valider le JSON ;
 4. rechercher les restaurants réels ;
 5. filtrer et classer ;
-6. demander à Claude de rédiger à partir des résultats ;
+6. demander à Gemini de rédiger à partir des résultats ;
 7. valider la réponse avant de la retourner.
 
-Claude ne doit pas suivre d'instructions présentes dans des données externes non fiables et ne doit pas inventer d'établissement.
+Gemini ne doit pas suivre d'instructions présentes dans des données externes non fiables et ne doit pas inventer d'établissement.
 
 ### T23 — Interface de chat
 
 Ajouter l'historique, l'envoi de message, l'état de traitement, les erreurs, les réponses contrôlées et les cartes de recommandations.
 
-**Tests :** JSON valide/invalide, timeout Claude, erreur Claude, aucun restaurant, résultats trouvés et contrôle de propriété d'une conversation.
+**Tests :** function call valide/invalide, timeout Gemini, erreur Gemini, réponse vide, aucun restaurant et résultats trouvés.
 
 **Validation de fin de phase :** le chatbot aide à formuler et présenter les résultats réels ; toutes les sorties externes sont validées.
 
@@ -222,7 +222,7 @@ Créer `.github/workflows/ci.yml` pour installer les dépendances, lancer format
 
 ### T30 — Architecture et coûts AWS
 
-Documenter frontend, Application Load Balancer, ECS Fargate, MongoDB Atlas, Claude, API restaurants, CloudWatch et les variables d'environnement. Estimer les coûts avant provisionnement.
+Documenter frontend, Application Load Balancer, ECS Fargate, MongoDB Atlas, Gemini, API restaurants, CloudWatch et les variables d'environnement. Estimer les coûts avant provisionnement.
 
 ### T31 — Secrets et IAM
 
@@ -260,7 +260,7 @@ Mettre à jour le README, le statut des tâches, les versions déployées, l'URL
 - [ ] Inscription, connexion, JWT et routes protégées fonctionnent.
 - [ ] La recherche utilise un fournisseur choisi et documenté.
 - [ ] Les filtres, erreurs et états frontend sont couverts.
-- [ ] Claude est appelé uniquement côté backend et ses sorties sont validées.
+- [x] Gemini est appelé uniquement côté backend et ses sorties sont validées.
 - [ ] Les conversations appartiennent au bon utilisateur.
 - [ ] Tests, lint, typage, scans et CI passent.
 - [ ] AWS, IAM, Secrets Manager, CloudWatch et Budget sont configurés.

@@ -31,7 +31,7 @@ Compose démarre les services dans l’ordre MongoDB, backend, puis frontend. `N
 
 Dans `.env`, remplace `OSM_USER_AGENT` par un identifiant de l’application et une adresse de contact réelle. Les recherches d’adresse utilisent le service public Nominatim, limité à une requête par seconde pour l’application ; le backend espace les appels par instance et garde les géocodages en mémoire 24 heures. Cette limite locale ne suffit pas si plusieurs instances backend sont déployées : dans ce cas, configure un fournisseur adapté ou une limitation/cache partagé. Les réponses Overpass sont mises en cache en mémoire pendant une minute. Les URL des services sont configurables par `NOMINATIM_URL` et `OVERPASS_URL`.
 
-L’assistant nécessite aussi `GEMINI_API_KEY` et `GEMINI_MODEL` (par défaut `gemini-2.5-flash`) ; sans ces deux valeurs, la carte OSM reste utilisable et l’assistant retourne une erreur de configuration. La recherche Web Gemini est désactivée par défaut (`GEMINI_WEB_SEARCH_ENABLED=false`) et n’est pas utilisée comme source de restaurants.
+L’assistant utilise l’API Interactions et le SDK officiel `google-genai` (version 2.3.0 minimum), installé par `backend/requirements.txt` (ou `requirements-dev.txt` pour le développement). Il nécessite aussi `GEMINI_API_KEY` et `GEMINI_MODEL` (par défaut `gemini-3.5-flash-lite`) ; sans ces valeurs, la carte OSM reste utilisable et l’assistant retourne une erreur de configuration. La recherche Web Gemini est désactivée par défaut (`GEMINI_WEB_SEARCH_ENABLED=false`) et n’est pas utilisée comme source de restaurants. La clé reste uniquement dans l’environnement du backend et ne doit jamais être ajoutée au frontend, au dépôt, aux logs ou au prompt.
 
 Adresses locales :
 
@@ -114,7 +114,7 @@ $env:JWT_SECRET = "dev-only-secret-change-me-32-bytes-minimum"
 $env:FRONTEND_ORIGIN = "http://localhost:3000"
 $env:OSM_USER_AGENT = "FeedMe/1.0 (contact: ton-email@example.com)"
 $env:GEMINI_API_KEY = "ta-cle-gemini"
-$env:GEMINI_MODEL = "gemini-2.5-flash"
+$env:GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 Set-Location backend
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload

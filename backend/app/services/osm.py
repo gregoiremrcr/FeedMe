@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 import time
 import unicodedata
@@ -17,6 +18,7 @@ _last_geocode_at = 0.0
 _geocode_cache: dict[str, tuple[float, Location]] = {}
 _overpass_lock = asyncio.Lock()
 _overpass_cache: OrderedDict[str, tuple[float, list[dict[str, Any]]]] = OrderedDict()
+logger = logging.getLogger(__name__)
 
 
 def _cached_geocode(key: str) -> Location | None:
@@ -63,7 +65,8 @@ async def geocode_address(address: str) -> Location:
                 )
                 response.raise_for_status()
                 matches = response.json()
-        except (httpx.HTTPError, ValueError):
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("Nominatim geocoding failed: %s", type(exc).__name__)
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Le service de recherche d’adresse est temporairement indisponible.",

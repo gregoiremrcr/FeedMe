@@ -52,21 +52,21 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 
 **Critères de fin :** les résultats proviennent de l’API choisie et non du modèle IA ; filtres et erreurs sont testés ; le frontend présente les informations utiles et les éventuelles attributions.
 
-## 4. Conversations et chatbot Claude
+## 4. Conversations et chatbot Gemini
 
 - [ ] Définir les modèles et schémas de conversation, message, critère extrait et réponse.
 - [ ] Implémenter les collections MongoDB `conversations` et `searches`, avec dates et lien vers l’utilisateur lorsque connecté.
 - [ ] Implémenter `POST /api/v1/conversations`, `GET /api/v1/conversations` et `GET /api/v1/conversations/{id}`.
 - [ ] Implémenter `POST /api/v1/conversations/{id}/messages` avec validation d’accès et des entrées.
-- [ ] Créer un client serveur Claude configurable par environnement, avec timeouts, erreurs contrôlées et aucun appel depuis le navigateur.
+- [x] Créer un client serveur Gemini configurable par environnement, avec timeout, erreurs contrôlées et aucun appel depuis le navigateur.
 - [ ] Concevoir un prompt d’extraction de critères et valider strictement la sortie JSON via Pydantic.
 - [ ] Orchestrer le flux : validation → extraction → recherche réelle → classement → formulation fondée sur les résultats → validation de la sortie.
 - [ ] Prévoir une réponse contrôlée si la sortie du modèle est invalide, si le service est indisponible ou si aucun résultat ne correspond.
 - [ ] Protéger les appels contre les contenus utilisateurs non fiables ; ne pas suivre d’instructions contenues dans les données de recherche.
-- [ ] Ajouter tests avec client Claude simulé : JSON valide/invalide, timeout/erreur, aucun restaurant et résultats trouvés.
+- [x] Ajouter des tests avec client Gemini simulé : function call valide/invalide, timeout/erreur, aucun restaurant et résultats trouvés.
 - [ ] Construire l’interface de chat avec historique, envoi, état de traitement, erreurs et cartes de recommandations.
 
-**Critères de fin :** Claude extrait/formule uniquement ; il n’invente pas les établissements ; tout échange externe est validé ; conversations et résultats sont correctement associés et protégés.
+**Critères de fin :** Gemini extrait/formule uniquement ; il n’invente pas les établissements ; tout échange externe est validé ; conversations et résultats sont correctement associés et protégés.
 
 ## 5. Qualité, documentation et protection
 
@@ -107,13 +107,13 @@ Ce document transforme les objectifs du [README](Readme.md) en tâches suivables
 2. Fondations.
 3. Authentification et accès aux données.
 4. Recherche de restaurants.
-5. Conversations et intégration Claude.
+5. Conversations et intégration Gemini.
 6. Qualité, CI/CD et déploiement.
 7. Préparation de la démonstration.
 ## Points explicitement non livrés
 
 - [ ] Ajouter la réinitialisation du mot de passe : demande, jeton temporaire, expiration, envoi d’e-mail et invalidation.
-- [ ] Valider l’intégration Anthropic en environnement réel : clé, modèle Claude autorisé, quotas, coûts, timeouts et erreurs.
-- [ ] Relier la préférence de langue à un comportement vérifiable ; elle est actuellement stockée et envoyée à Claude, mais ne localise pas l’interface.
+- [ ] Valider l’intégration Gemini en environnement réel : clé, modèle autorisé, quotas, coûts, timeout et erreurs.
+- [x] Relier la préférence de langue à une consigne Gemini vérifiable ; elle ne localise pas l’interface.
 - [ ] Remplacer le solde midi statique du frontend par une source métier réelle, ou le retirer de l’interface.
-- [ ] Finaliser le chatbot : persistance des conversations, routes dédiées, tests d’intégration Anthropic et validation du parcours complet.
+- [ ] Finaliser le chatbot : persistance des conversations, routes dédiées et validation du parcours complet.

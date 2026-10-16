@@ -247,7 +247,7 @@ gcloud run deploy feedme-backend \
   --platform=managed \
   --service-account="$RUNTIME_EMAIL" \
   --allow-unauthenticated \
-  --set-env-vars="APP_ENV=production,MONGO_DATABASE=feedme,GEMINI_MODEL=gemini-2.5-flash,GEMINI_WEB_SEARCH_ENABLED=false,OSM_USER_AGENT=FeedMe/1.0,OVERPASS_TIMEOUT_SECONDS=30" \
+  --set-env-vars="APP_ENV=production,MONGO_DATABASE=feedme,GEMINI_MODEL=gemini-3.5-flash-lite,GEMINI_WEB_SEARCH_ENABLED=false,OSM_USER_AGENT=FeedMe/1.0,OVERPASS_TIMEOUT_SECONDS=30" \
   --set-secrets="MONGO_URL=feedme-mongo-url:latest,JWT_SECRET=feedme-jwt-secret:latest,GEMINI_API_KEY=feedme-gemini-api-key:latest"
 ```
 
@@ -323,7 +323,7 @@ gcloud run deploy feedme-backend \
   --platform=managed \
   --service-account="$RUNTIME_EMAIL" \
   --allow-unauthenticated \
-  --set-env-vars="APP_ENV=production,MONGO_DATABASE=feedme,FRONTEND_ORIGIN=$APP_DOMAIN,GEMINI_MODEL=gemini-2.5-flash,GEMINI_WEB_SEARCH_ENABLED=false,OSM_USER_AGENT=FeedMe/1.0,OVERPASS_TIMEOUT_SECONDS=30" \
+  --set-env-vars="APP_ENV=production,MONGO_DATABASE=feedme,FRONTEND_ORIGIN=$APP_DOMAIN,GEMINI_MODEL=gemini-3.5-flash-lite,GEMINI_WEB_SEARCH_ENABLED=false,OSM_USER_AGENT=FeedMe/1.0,OVERPASS_TIMEOUT_SECONDS=30" \
   --set-secrets="MONGO_URL=feedme-mongo-url:latest,JWT_SECRET=feedme-jwt-secret:latest,GEMINI_API_KEY=feedme-gemini-api-key:latest"
 ```
 
